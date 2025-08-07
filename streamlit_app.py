@@ -1,13 +1,17 @@
 import streamlit as st
 import time
 import random
+import os
+import tempfile
+import webbrowser
 from datetime import datetime
 import json
+import groq
 
 # Page configuration
 st.set_page_config(
-    page_title="AI Chatbot",
-    page_icon="🤖",
+    page_title="AI HTML Generator",
+    page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -61,6 +65,23 @@ st.markdown("""
         margin-bottom: 1rem;
         text-align: center;
     }
+    
+    .html-preview {
+        border: 2px solid #667eea;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        background-color: #f8f9fa;
+    }
+    
+    .success-message {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        color: #155724;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -69,112 +90,311 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []
 
 if 'current_personality' not in st.session_state:
-    st.session_state.current_personality = "Friendly Assistant"
+    st.session_state.current_personality = "HTML Generator"
 
-# Chatbot personalities
+if 'generated_html' not in st.session_state:
+    st.session_state.generated_html = None
+
+if 'html_file_path' not in st.session_state:
+    st.session_state.html_file_path = None
+
+# Initialize Groq client
+def get_groq_client():
+    """Initialize Groq client with API key"""
+    api_key = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY"))
+    if not api_key:
+        st.error("❌ Groq API key not found. Please set it in Streamlit secrets or environment variables.")
+        return None
+    return groq.Groq(api_key=api_key)
+
+# HTML generation personalities
 PERSONALITIES = {
-    "Friendly Assistant": {
-        "description": "A helpful and friendly AI assistant",
-        "greeting": "Hello! I'm your friendly AI assistant. How can I help you today? 😊",
-        "responses": [
-            "That's interesting! Tell me more about that.",
-            "I'd be happy to help you with that!",
-            "That's a great question. Let me think about it...",
-            "I understand what you're saying. What would you like to know?",
-            "Thanks for sharing that with me!",
-            "I'm here to help you with anything you need.",
-            "That's a fascinating topic!",
-            "I appreciate you asking that question."
-        ]
+    "HTML Generator": {
+        "description": "Generate complete HTML websites from prompts",
+        "greeting": "Hello! I'm your HTML generator. Describe the website you want to create and I'll generate it for you! 🌐",
+        "system_prompt": """You are an expert web developer and designer. Generate complete, functional HTML pages based on user prompts. 
+        Always include:
+        - Complete HTML structure with proper DOCTYPE
+        - Modern CSS styling with gradients, animations, and responsive design
+        - JavaScript for interactivity
+        - Meta tags for SEO
+        - Viewport settings for mobile responsiveness
+        - Beautiful, modern design with professional styling
+        - Interactive elements and smooth animations
+        - Color schemes that match the theme
+        - Fonts from Google Fonts
+        - Icons from Font Awesome or similar
+        
+        Make the design modern, beautiful, and fully functional. Include all necessary CSS and JavaScript inline."""
     },
-    "Tech Expert": {
-        "description": "A knowledgeable tech enthusiast",
-        "greeting": "Hey there! I'm your tech expert. Ready to dive into the latest in technology? 💻",
-        "responses": [
-            "From a technical perspective, that's quite interesting.",
-            "Let me break down the technical aspects for you.",
-            "In terms of technology, here's what you should know...",
-            "That's a great technical question!",
-            "The technology behind this is fascinating.",
-            "Let me explain the technical details...",
-            "This is a common challenge in tech.",
-            "From an engineering standpoint..."
-        ]
+    "Portfolio Creator": {
+        "description": "Specialized in creating portfolio websites",
+        "greeting": "Hi! I'm your portfolio specialist. Let me create stunning portfolio websites for you! 🎨",
+        "system_prompt": """You are an expert portfolio website designer. Create beautiful, professional portfolio websites.
+        Always include:
+        - Hero section with name and title
+        - About section
+        - Skills/technologies section
+        - Projects/portfolio section
+        - Contact information
+        - Smooth scrolling navigation
+        - Professional color schemes
+        - Modern animations and transitions
+        - Responsive design for all devices
+        - Professional typography
+        - Call-to-action buttons"""
     },
-    "Creative Writer": {
-        "description": "An imaginative and creative AI",
-        "greeting": "Hello! I'm your creative writing assistant. Let's craft something amazing together! ✨",
-        "responses": [
-            "That's a beautiful thought! Let me add some creative flair...",
-            "What an inspiring idea! Here's how I see it...",
-            "Let me paint a picture with words for you...",
-            "That's the kind of creativity I love!",
-            "Let's explore this idea together...",
-            "Your imagination is wonderful!",
-            "This reminds me of a story...",
-            "Let me weave some magic into this..."
-        ]
+    "Business Website": {
+        "description": "Create professional business websites",
+        "greeting": "Hello! I'm your business website expert. Let me create professional business websites for you! 💼",
+        "system_prompt": """You are an expert business website designer. Create professional, conversion-focused business websites.
+        Always include:
+        - Hero section with value proposition
+        - Services/products section
+        - About the company
+        - Contact information and forms
+        - Call-to-action buttons
+        - Professional branding
+        - Trust indicators (testimonials, certifications)
+        - Mobile-responsive design
+        - Fast loading optimization
+        - SEO-friendly structure"""
     },
-    "Sage Advisor": {
-        "description": "A wise and philosophical AI",
-        "greeting": "Greetings, seeker of wisdom. I am here to share insights and guidance. 🧘‍♂️",
-        "responses": [
-            "That's a profound question that touches on deeper truths.",
-            "Let me share some wisdom with you...",
-            "This reminds me of an ancient saying...",
-            "In the grand scheme of things...",
-            "There's great wisdom in what you're asking.",
-            "Let me offer you some thoughtful perspective...",
-            "This is a question that has puzzled many throughout time.",
-            "Consider this perspective..."
-        ]
+    "Creative Designer": {
+        "description": "Create artistic and creative websites",
+        "greeting": "Hey! I'm your creative designer. Let's make some artistic and unique websites! ✨",
+        "system_prompt": """You are a creative web designer specializing in artistic and unique websites.
+        Always include:
+        - Creative and artistic design elements
+        - Unique color schemes and typography
+        - Interactive animations and effects
+        - Creative layouts and positioning
+        - Artistic backgrounds and patterns
+        - Smooth transitions and hover effects
+        - Creative navigation
+        - Visual storytelling elements
+        - Modern CSS techniques (grid, flexbox, animations)
+        - Unique visual elements and graphics"""
     }
 }
 
-def generate_response(user_input, personality):
-    """Generate a response based on the selected personality"""
-    responses = PERSONALITIES[personality]["responses"]
+def generate_html_with_groq(prompt, personality):
+    """Generate HTML using Groq API"""
+    client = get_groq_client()
+    if not client:
+        return None, "Failed to initialize Groq client"
     
-    # Simple response generation based on keywords
-    user_input_lower = user_input.lower()
+    try:
+        system_prompt = PERSONALITIES[personality]["system_prompt"]
+        
+        # Create the full prompt
+        full_prompt = f"""
+        {system_prompt}
+        
+        User Request: {prompt}
+        
+        Generate a complete, functional HTML page that matches this request. 
+        Include all necessary CSS and JavaScript inline. 
+        Make it beautiful, modern, and fully responsive.
+        """
+        
+        # Call Groq API
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user", 
+                    "content": f"Create a complete HTML website for: {prompt}"
+                }
+            ],
+            model="llama3-70b-8192",
+            temperature=0.7,
+            max_tokens=4000
+        )
+        
+        html_content = chat_completion.choices[0].message.content
+        
+        # Clean up the response to ensure it's valid HTML
+        if not html_content.strip().startswith('<!DOCTYPE html>'):
+            # If the response doesn't start with DOCTYPE, wrap it
+            html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Website</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        body {{
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }}
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }}
+        .hero {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }}
+        .hero h1 {{
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }}
+        .hero p {{
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }}
+        .btn {{
+            display: inline-block;
+            padding: 12px 30px;
+            background: #fff;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }}
+        .btn:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }}
+        .content {{
+            padding: 80px 0;
+        }}
+        .section {{
+            margin-bottom: 60px;
+        }}
+        .section h2 {{
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #333;
+        }}
+        .features {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }}
+        .feature {{
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }}
+        .feature:hover {{
+            transform: translateY(-5px);
+        }}
+        .feature i {{
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }}
+        footer {{
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 40px 0;
+            margin-top: 60px;
+        }}
+        @media (max-width: 768px) {{
+            .hero h1 {{
+                font-size: 2rem;
+            }}
+            .section h2 {{
+                font-size: 2rem;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <h1>Welcome to Your Generated Website</h1>
+            <p>Created with AI-powered web generation</p>
+            <a href="#content" class="btn">Get Started</a>
+        </div>
+    </div>
     
-    if any(word in user_input_lower for word in ["hello", "hi", "hey"]):
-        return f"Hello! Nice to meet you! {random.choice(responses)}"
+    <div class="content" id="content">
+        <div class="container">
+            <div class="section">
+                <h2>About This Website</h2>
+                <p>This website was generated based on your request: "{prompt}"</p>
+                
+                <div class="features">
+                    <div class="feature">
+                        <i class="fas fa-magic"></i>
+                        <h3>AI Generated</h3>
+                        <p>Created using advanced AI technology</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-mobile-alt"></i>
+                        <h3>Responsive</h3>
+                        <p>Works perfectly on all devices</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-paint-brush"></i>
+                        <h3>Modern Design</h3>
+                        <p>Beautiful and contemporary styling</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    elif any(word in user_input_lower for word in ["how are you", "how do you do"]):
-        return f"I'm doing great, thank you for asking! {random.choice(responses)}"
-    
-    elif any(word in user_input_lower for word in ["name", "who are you"]):
-        return f"I'm your {personality.lower()}. {random.choice(responses)}"
-    
-    elif any(word in user_input_lower for word in ["help", "assist"]):
-        return f"I'm here to help you! {random.choice(responses)} What would you like to know?"
-    
-    elif any(word in user_input_lower for word in ["thank", "thanks"]):
-        return f"You're very welcome! {random.choice(responses)}"
-    
-    elif any(word in user_input_lower for word in ["bye", "goodbye", "see you"]):
-        return f"Goodbye! It was wonderful chatting with you. {random.choice(responses)}"
-    
-    else:
-        # Generate contextual response
-        if personality == "Tech Expert":
-            return f"That's an interesting topic! From a technical perspective, {random.choice(responses)}"
-        elif personality == "Creative Writer":
-            return f"What an inspiring thought! {random.choice(responses)}"
-        elif personality == "Sage Advisor":
-            return f"That's a profound question. {random.choice(responses)}"
-        else:
-            return random.choice(responses)
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 AI Generated Website. Made with ❤️ using AI.</p>
+        </div>
+    </footer>
+</body>
+</html>"""
+        
+        return html_content, None
+        
+    except Exception as e:
+        return None, f"Error generating HTML: {str(e)}"
 
-def add_message(role, content, personality=None):
+def save_and_open_html(html_content, prompt):
+    """Save HTML to file and open in browser"""
+    try:
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
+            f.write(html_content)
+            file_path = f.name
+        
+        # Open in browser
+        webbrowser.open(f'file://{file_path}')
+        
+        return file_path, None
+    except Exception as e:
+        return None, f"Error saving/opening HTML: {str(e)}"
+
+def add_message(role, content, personality=None, html_content=None):
     """Add a message to the chat history"""
     timestamp = datetime.now().strftime("%H:%M")
     st.session_state.messages.append({
         "role": role,
         "content": content,
         "timestamp": timestamp,
-        "personality": personality
+        "personality": personality,
+        "html_content": html_content
     })
 
 def display_chat():
@@ -202,10 +422,30 @@ def display_chat():
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                # Show HTML preview if available
+                if message.get("html_content"):
+                    with st.expander("🌐 View Generated HTML", expanded=True):
+                        st.markdown("""
+                        <div class="success-message">
+                            ✅ HTML generated successfully! The webpage should have opened in your browser.
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Show HTML code
+                        st.code(message["html_content"], language="html")
+                        
+                        # Download button
+                        st.download_button(
+                            label="📥 Download HTML File",
+                            data=message["html_content"],
+                            file_name=f"generated_website_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                            mime="text/html"
+                        )
 
 # Sidebar
 with st.sidebar:
-    st.markdown('<div class="sidebar-header">🤖 Chatbot Settings</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-header">🌐 HTML Generator</div>', unsafe_allow_html=True)
     
     # Personality selector
     selected_personality = st.selectbox(
@@ -222,6 +462,16 @@ with st.sidebar:
     
     st.markdown(f"**Current:** {selected_personality}")
     st.markdown(f"*{PERSONALITIES[selected_personality]['description']}*")
+    
+    st.markdown("---")
+    
+    # API Key Status
+    groq_client = get_groq_client()
+    if groq_client:
+        st.success("✅ Groq API connected")
+    else:
+        st.error("❌ Groq API not configured")
+        st.info("Add your Groq API key to Streamlit secrets or environment variables")
     
     st.markdown("---")
     
@@ -250,14 +500,16 @@ with st.sidebar:
     if st.session_state.messages:
         user_messages = len([m for m in st.session_state.messages if m["role"] == "user"])
         bot_messages = len([m for m in st.session_state.messages if m["role"] == "assistant"])
+        html_generated = len([m for m in st.session_state.messages if m.get("html_content")])
         
         st.markdown("**📊 Chat Statistics:**")
         st.markdown(f"• Your messages: {user_messages}")
         st.markdown(f"• AI responses: {bot_messages}")
+        st.markdown(f"• HTML pages generated: {html_generated}")
         st.markdown(f"• Total messages: {len(st.session_state.messages)}")
 
 # Main chat interface
-st.markdown('<div class="main-header">🤖 AI Chatbot</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🌐 AI HTML Generator</div>', unsafe_allow_html=True)
 
 # Welcome message if no messages yet
 if not st.session_state.messages:
@@ -268,17 +520,29 @@ display_chat()
 
 # Chat input
 with st.container():
-    user_input = st.chat_input("Type your message here...")
+    user_input = st.chat_input("Describe the website you want to create...")
     
     if user_input:
         # Add user message
         add_message("user", user_input)
         
-        # Generate and add bot response
-        with st.spinner("🤖 Thinking..."):
-            time.sleep(0.5)  # Simulate thinking time
-            response = generate_response(user_input, st.session_state.current_personality)
-            add_message("assistant", response, st.session_state.current_personality)
+        # Generate HTML with Groq
+        with st.spinner("🤖 Generating your website..."):
+            html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
+            
+            if html_content:
+                # Save and open HTML file
+                file_path, open_error = save_and_open_html(html_content, user_input)
+                
+                if file_path:
+                    response = f"✅ Your website has been generated and opened in your browser! The HTML file has been saved and should be displayed in a new tab."
+                    add_message("assistant", response, st.session_state.current_personality, html_content)
+                else:
+                    response = f"✅ Your website has been generated! However, there was an issue opening it automatically: {open_error}. You can download the HTML file below."
+                    add_message("assistant", response, st.session_state.current_personality, html_content)
+            else:
+                response = f"❌ Sorry, I couldn't generate the website. Error: {error}"
+                add_message("assistant", response, st.session_state.current_personality)
         
         st.rerun()
 
@@ -287,7 +551,7 @@ st.markdown("---")
 st.markdown(
     """
     <div style="text-align: center; color: #666; font-size: 0.8rem;">
-        Made with ❤️ using Streamlit | AI Chatbot v1.0
+        Made with ❤️ using Streamlit and Groq | AI HTML Generator v1.0
     </div>
     """,
     unsafe_allow_html=True
