@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import time
 import random
 import os
@@ -81,6 +82,13 @@ st.markdown("""
         padding: 1rem;
         margin: 1rem 0;
         color: #155724;
+    }
+    
+    .html-container {
+        border: 2px solid #667eea;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+        overflow: hidden;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -371,20 +379,17 @@ def generate_html_with_groq(prompt, personality):
     except Exception as e:
         return None, f"Error generating HTML: {str(e)}"
 
-def save_and_open_html(html_content, prompt):
-    """Save HTML to file and open in browser"""
+def save_html_file(html_content, prompt):
+    """Save HTML to file for download"""
     try:
         # Create a temporary file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
             f.write(html_content)
             file_path = f.name
         
-        # Open in browser
-        webbrowser.open(f'file://{file_path}')
-        
         return file_path, None
     except Exception as e:
-        return None, f"Error saving/opening HTML: {str(e)}"
+        return None, f"Error saving HTML: {str(e)}"
 
 def add_message(role, content, personality=None, html_content=None):
     """Add a message to the chat history"""
@@ -425,15 +430,17 @@ def display_chat():
                 
                 # Show HTML preview if available
                 if message.get("html_content"):
-                    with st.expander("🌐 View Generated HTML", expanded=True):
+                    with st.expander("🌐 View Generated Website", expanded=True):
                         st.markdown("""
                         <div class="success-message">
-                            ✅ HTML generated successfully! The webpage should have opened in your browser.
+                            ✅ HTML generated successfully! View the website below.
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        # Show HTML code
-                        st.code(message["html_content"], language="html")
+                        # Display HTML in Streamlit
+                        st.markdown('<div class="html-container">', unsafe_allow_html=True)
+                        components.html(message["html_content"], height=600, scrolling=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
                         
                         # Download button
                         st.download_button(
@@ -442,6 +449,10 @@ def display_chat():
                             file_name=f"generated_website_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
                             mime="text/html"
                         )
+                        
+                        # Show HTML code in collapsible section
+                        with st.expander("📄 View HTML Code"):
+                            st.code(message["html_content"], language="html")
 
 # Sidebar
 with st.sidebar:
@@ -531,15 +542,8 @@ with st.container():
             html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
             
             if html_content:
-                # Save and open HTML file
-                file_path, open_error = save_and_open_html(html_content, user_input)
-                
-                if file_path:
-                    response = f"✅ Your website has been generated and opened in your browser! The HTML file has been saved and should be displayed in a new tab."
-                    add_message("assistant", response, st.session_state.current_personality, html_content)
-                else:
-                    response = f"✅ Your website has been generated! However, there was an issue opening it automatically: {open_error}. You can download the HTML file below."
-                    add_message("assistant", response, st.session_state.current_personality, html_content)
+                response = f"✅ Your website has been generated successfully! You can view it below and download the HTML file."
+                add_message("assistant", response, st.session_state.current_personality, html_content)
             else:
                 response = f"❌ Sorry, I couldn't generate the website. Error: {error}"
                 add_message("assistant", response, st.session_state.current_personality)
