@@ -385,7 +385,8 @@ if st.session_state.show_published:
     st.markdown('<div class="published-header">🚀 Published Website</div>', unsafe_allow_html=True)
     
     # Published website container
-    st.markdown('<div class="published-container">', unsafe_allow_html=True)
+    
+    #st.markdown('<div class="published-container">', unsafe_allow_html=True)
     
     if st.session_state.current_html:
         try:
