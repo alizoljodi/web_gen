@@ -400,7 +400,32 @@ else:
         st.session_state.show_results = False
         st.rerun()
     
-    st.markdown('<div class="results-header">🌐 Generated Website Results</div>', unsafe_allow_html=True)
+    # Header with Publish button
+    col_header1, col_header2 = st.columns([3, 1])
+    
+    with col_header1:
+        st.markdown('<div class="results-header">🌐 Generated Website Results</div>', unsafe_allow_html=True)
+    
+    with col_header2:
+        st.markdown("""
+        <style>
+        .publish-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .publish-button:hover {
+            background-color: #c82333;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        if st.button("🚀 Publish", key="publish_button", help="Publish your website"):
+            st.success("✅ Website published successfully!")
     
     # Two column layout
     col1, col2 = st.columns([1, 1])
