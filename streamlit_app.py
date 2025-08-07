@@ -330,10 +330,6 @@ def display_chat():
 st.markdown('<div class="main-header">💕 Build something lovable</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Describe the website you want to create and I\'ll generate it for you!</div>', unsafe_allow_html=True)
 
-# Welcome message if no messages yet
-if not st.session_state.messages:
-    add_message("assistant", PERSONALITIES[st.session_state.current_personality]["greeting"], st.session_state.current_personality)
-
 # Display chat messages
 display_chat()
 
