@@ -330,8 +330,6 @@ if not st.session_state.show_results:
             html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
             
             if html_content:
-                response = f"✅ Your website has been generated successfully!"
-                add_message("assistant", response, st.session_state.current_personality, html_content)
                 st.session_state.current_html = html_content
                 st.session_state.show_results = True
                 st.rerun()
