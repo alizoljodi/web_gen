@@ -414,7 +414,7 @@ else:
         st.session_state.show_results = False
         st.rerun()
     
-    # st.markdown('<div class="results-header">🌐 Generated Website Results</div>', unsafe_allow_html=True)
+    st.markdown('<div class="results-header">🌐 Generated Website Results</div>', unsafe_allow_html=True)
     
     # Two column layout
     col1, col2 = st.columns([1, 1])
