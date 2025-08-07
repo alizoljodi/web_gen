@@ -285,7 +285,7 @@ def add_message(role, content, personality=None, html_content=None):
     # If HTML content is provided, open it in browser
     if html_content:
         try:
-            file_path, error = save_and_open_html(html_content, content)
+            file_path, error = save_and_open_html(html_content)
             if file_path:
                 st.success("🌐 Generated website opened in new browser tab!")
             else:
@@ -473,6 +473,7 @@ else:
             """, unsafe_allow_html=True)
             publish_button = st.button("🚀 Publish", key="publish_button", help="Publish your website")
             if publish_button:
+                st.write("Debug - Current HTML:", st.session_state.current_html[:200] if st.session_state.current_html else "No HTML content")
                 try:
                     file_path, error = save_and_open_html(st.session_state.current_html)
                     if file_path:
