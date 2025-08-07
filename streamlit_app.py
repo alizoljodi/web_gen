@@ -264,20 +264,12 @@ def generate_html_with_groq(prompt, personality):
     except Exception as e:
         return None, f"Error generating HTML: {str(e)}"
 
-def save_and_open_html(html_content, prompt):
-    """Save HTML to file and open in browser"""
-    try:
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
-            f.write(html_content)
-            file_path = f.name
-        
-        # Open in browser
-        webbrowser.open(f'file://{file_path}')
-        
-        return file_path, None
-    except Exception as e:
-        return None, f"Error saving/opening HTML: {str(e)}"
+def save_and_open_html(html_content):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as f:
+        f.write(html_content)
+        file_path = f.name
+
+    webbrowser.open_new_tab(f"file://{file_path}")
 
 def add_message(role, content, personality=None, html_content=None):
     """Add a message to the chat history"""
