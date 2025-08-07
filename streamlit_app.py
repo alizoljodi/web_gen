@@ -179,6 +179,9 @@ if 'show_results' not in st.session_state:
 if 'current_html' not in st.session_state:
     st.session_state.current_html = None
 
+if 'show_published' not in st.session_state:
+    st.session_state.show_published = False
+
 # Initialize Groq client
 def get_groq_client():
     """Initialize Groq client with API key"""
@@ -264,12 +267,20 @@ def generate_html_with_groq(prompt, personality):
     except Exception as e:
         return None, f"Error generating HTML: {str(e)}"
 
-def save_and_open_html(html_content):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as f:
-        f.write(html_content)
-        file_path = f.name
-
-    webbrowser.open_new_tab(f"file://{file_path}")
+def save_and_open_html(html_content, prompt):
+    """Save HTML to file and open in browser"""
+    try:
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
+            f.write(html_content)
+            file_path = f.name
+        
+        # Open in browser
+        webbrowser.open(f'file://{file_path}')
+        
+        return file_path, None
+    except Exception as e:
+        return None, f"Error saving/opening HTML: {str(e)}"
 
 def add_message(role, content, personality=None, html_content=None):
     """Add a message to the chat history"""
@@ -285,7 +296,7 @@ def add_message(role, content, personality=None, html_content=None):
     # If HTML content is provided, open it in browser
     if html_content:
         try:
-            file_path, error = save_and_open_html(html_content)
+            file_path, error = save_and_open_html(html_content, content)
             if file_path:
                 st.success("🌐 Generated website opened in new browser tab!")
             else:
@@ -473,15 +484,8 @@ else:
             """, unsafe_allow_html=True)
             publish_button = st.button("🚀 Publish", key="publish_button", help="Publish your website")
             if publish_button:
-                st.write("Debug - Current HTML:", st.session_state.current_html[:200] if st.session_state.current_html else "No HTML content")
-                try:
-                    file_path, error = save_and_open_html(st.session_state.current_html)
-                    if file_path:
-                        st.success("✅ Website opened in new browser tab!")
-                    else:
-                        st.error(f"❌ Could not open browser: {error}")
-                except Exception as e:
-                    st.error(f"❌ Error opening browser: {str(e)}")
+                st.session_state.show_published = True
+                st.rerun()
         
         st.markdown("---")
         
@@ -514,6 +518,73 @@ else:
             st.info("No website generated yet. Start a conversation to see results here.")
         
         st.markdown('</div>', unsafe_allow_html=True)
+
+# Published page
+elif st.session_state.show_published:
+    st.markdown("""
+    <style>
+        .published-header {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+        
+        .published-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 90vh;
+            overflow: hidden;
+        }
+        
+        .tab-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .back-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .back-button:hover {
+            background: #5a6268;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Back button
+    if st.button("← Back to Editor", key="back_to_editor"):
+        st.session_state.show_published = False
+        st.rerun()
+    
+    st.markdown('<div class="published-header">🚀 Published Website</div>', unsafe_allow_html=True)
+    
+    # Published website container
+    st.markdown('<div class="published-container">', unsafe_allow_html=True)
+    
+    if st.session_state.current_html:
+        try:
+            components.html(st.session_state.current_html, height=800, scrolling=True)
+        except Exception as e:
+            st.error(f"Error rendering HTML: {str(e)}")
+            st.info("HTML content is available for download below.")
+    else:
+        st.info("No website to display.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer
 st.markdown("""
