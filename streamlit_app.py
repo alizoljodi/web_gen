@@ -365,6 +365,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 # Footer
 st.markdown("""
 <div class="footer">
-    Made with ❤️ using Streamlit and Groq | Build something lovable
+    
 </div>
 """, unsafe_allow_html=True)
