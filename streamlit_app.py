@@ -390,7 +390,7 @@ if st.session_state.show_published:
     
     if st.session_state.current_html:
         try:
-            components.html(st.session_state.current_html, height=800, width=1000, scrolling=True)
+            components.html(st.session_state.current_html, height=800, width=1400, scrolling=True)
         except Exception as e:
             st.error(f"Error rendering HTML: {str(e)}")
             st.info("HTML content is available for download below.")
