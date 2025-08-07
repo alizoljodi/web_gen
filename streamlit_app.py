@@ -143,6 +143,20 @@ st.markdown("""
         width: 100%;
         box-sizing: border-box;
     }
+    
+    .publish-button {
+        background-color: #dc3545 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 0.5rem !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 500 !important;
+        transition: background 0.3s ease !important;
+    }
+    
+    .publish-button:hover {
+        background-color: #c82333 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -400,7 +414,7 @@ else:
         st.session_state.show_results = False
         st.rerun()
     
-    st.markdown('<div class="results-header">🌐 Generated Website Results</div>', unsafe_allow_html=True)
+    # st.markdown('<div class="results-header">🌐 Generated Website Results</div>', unsafe_allow_html=True)
     
     # Two column layout
     col1, col2 = st.columns([1, 1])
@@ -449,7 +463,24 @@ else:
             st.markdown("**🌐 Generated Website**")
         
         with col_header2:
-            if st.button("🚀 Publish", key="publish_button", help="Publish your website"):
+            st.markdown("""
+            <style>
+            div[data-testid="stButton"] button[key="publish_button"] {
+                background-color: #dc3545 !important;
+                color: white !important;
+                border: none !important;
+                border-radius: 0.5rem !important;
+                padding: 0.5rem 1rem !important;
+                font-weight: 500 !important;
+                transition: background 0.3s ease !important;
+            }
+            div[data-testid="stButton"] button[key="publish_button"]:hover {
+                background-color: #c82333 !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            publish_button = st.button("🚀 Publish", key="publish_button", help="Publish your website")
+            if publish_button:
                 st.success("✅ Website published successfully!")
         
         st.markdown("---")
