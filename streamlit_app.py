@@ -11,26 +11,37 @@ import groq
 
 # Page configuration
 st.set_page_config(
-    page_title="AI HTML Generator",
-    page_icon="🌐",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="Build something lovable",
+    page_icon="💕",
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for better styling
+# Custom CSS for ChatGPT-like styling
 st.markdown("""
 <style>
     .main-header {
-        font-size: 3rem;
+        font-size: 2.5rem;
         font-weight: bold;
         text-align: center;
-        margin-bottom: 2rem;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+        color: #333;
     }
     
-    .chat-message {
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 3rem;
+        font-size: 1.1rem;
+    }
+    
+    .chat-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    
+    .message {
         padding: 1rem;
         border-radius: 0.5rem;
         margin-bottom: 1rem;
@@ -39,13 +50,13 @@ st.markdown("""
     }
     
     .user-message {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196f3;
+        background-color: #f0f0f0;
+        border-left: 4px solid #007bff;
     }
     
     .bot-message {
-        background-color: #f3e5f5;
-        border-left: 4px solid #9c27b0;
+        background-color: #f8f9fa;
+        border-left: 4px solid #28a745;
     }
     
     .message-time {
@@ -54,25 +65,46 @@ st.markdown("""
         margin-top: 0.5rem;
     }
     
-    .stButton > button {
-        width: 100%;
-        border-radius: 0.5rem;
-        font-weight: bold;
+    .chat-input-container {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 800px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 1rem;
+        padding: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
-    .sidebar-header {
-        font-size: 1.5rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
-        text-align: center;
+    .stTextInput > div > div > input {
+        border: none;
+        outline: none;
+        font-size: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .stButton > button {
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: background 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        background: #0056b3;
     }
     
     .html-preview {
-        border: 2px solid #667eea;
+        border: 1px solid #ddd;
         border-radius: 0.5rem;
-        padding: 1rem;
         margin: 1rem 0;
-        background-color: #f8f9fa;
+        overflow: hidden;
     }
     
     .success-message {
@@ -84,11 +116,23 @@ st.markdown("""
         color: #155724;
     }
     
-    .html-container {
-        border: 2px solid #667eea;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-        overflow: hidden;
+    .footer {
+        text-align: center;
+        color: #666;
+        font-size: 0.8rem;
+        margin-top: 4rem;
+        padding: 1rem;
+    }
+    
+    /* Hide sidebar */
+    .css-1d391kg {
+        display: none;
+    }
+    
+    /* Center the main content */
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 8rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -117,8 +161,6 @@ def get_groq_client():
     
     try:
         client = groq.Groq(api_key=api_key)
-        # Test the client with a simple call
-        st.success("✅ Groq API key is valid")
         return client
     except Exception as e:
         st.error(f"❌ Error initializing Groq client: {str(e)}")
@@ -128,7 +170,7 @@ def get_groq_client():
 PERSONALITIES = {
     "HTML Generator": {
         "description": "Generate complete HTML websites from prompts",
-        "greeting": "Hello! I'm your HTML generator. Describe the website you want to create and I'll generate it for you! 🌐",
+        "greeting": "Ask me anything about the website you want to create and I'll generate it for you!",
         "system_prompt": """You are an expert web developer and designer. Generate complete, functional HTML pages based on user prompts. 
         Always include:
         - Complete HTML structure with proper DOCTYPE
@@ -143,55 +185,6 @@ PERSONALITIES = {
         - Icons from Font Awesome or similar
         
         Make the design modern, beautiful, and fully functional. Include all necessary CSS and JavaScript inline."""
-    },
-    "Portfolio Creator": {
-        "description": "Specialized in creating portfolio websites",
-        "greeting": "Hi! I'm your portfolio specialist. Let me create stunning portfolio websites for you! 🎨",
-        "system_prompt": """You are an expert portfolio website designer. Create beautiful, professional portfolio websites.
-        Always include:
-        - Hero section with name and title
-        - About section
-        - Skills/technologies section
-        - Projects/portfolio section
-        - Contact information
-        - Smooth scrolling navigation
-        - Professional color schemes
-        - Modern animations and transitions
-        - Responsive design for all devices
-        - Professional typography
-        - Call-to-action buttons"""
-    },
-    "Business Website": {
-        "description": "Create professional business websites",
-        "greeting": "Hello! I'm your business website expert. Let me create professional business websites for you! 💼",
-        "system_prompt": """You are an expert business website designer. Create professional, conversion-focused business websites.
-        Always include:
-        - Hero section with value proposition
-        - Services/products section
-        - About the company
-        - Contact information and forms
-        - Call-to-action buttons
-        - Professional branding
-        - Trust indicators (testimonials, certifications)
-        - Mobile-responsive design
-        - Fast loading optimization
-        - SEO-friendly structure"""
-    },
-    "Creative Designer": {
-        "description": "Create artistic and creative websites",
-        "greeting": "Hey! I'm your creative designer. Let's make some artistic and unique websites! ✨",
-        "system_prompt": """You are a creative web designer specializing in artistic and unique websites.
-        Always include:
-        - Creative and artistic design elements
-        - Unique color schemes and typography
-        - Interactive animations and effects
-        - Creative layouts and positioning
-        - Artistic backgrounds and patterns
-        - Smooth transitions and hover effects
-        - Creative navigation
-        - Visual storytelling elements
-        - Modern CSS techniques (grid, flexbox, animations)
-        - Unique visual elements and graphics"""
     }
 }
 
@@ -283,7 +276,7 @@ def display_chat():
         with st.container():
             if message["role"] == "user":
                 st.markdown(f"""
-                <div class="chat-message user-message">
+                <div class="message user-message">
                     <div style="flex-grow: 1;">
                         <strong>You:</strong><br>
                         {message["content"]}
@@ -294,7 +287,7 @@ def display_chat():
             else:
                 personality = message.get("personality", "Assistant")
                 st.markdown(f"""
-                <div class="chat-message bot-message">
+                <div class="message bot-message">
                     <div style="flex-grow: 1;">
                         <strong>{personality}:</strong><br>
                         {message["content"]}
@@ -313,9 +306,9 @@ def display_chat():
                     """, unsafe_allow_html=True)
                     
                     # Display HTML in Streamlit with a simple container
-                    st.markdown('<div class="html-container">', unsafe_allow_html=True)
+                    st.markdown('<div class="html-preview">', unsafe_allow_html=True)
                     try:
-                        components.html(message["html_content"], height=600, scrolling=True)
+                        components.html(message["html_content"], height=400, scrolling=True)
                     except Exception as e:
                         st.error(f"Error rendering HTML: {str(e)}")
                         st.info("HTML content is available for download below.")
@@ -332,96 +325,10 @@ def display_chat():
                         )
                     except Exception as e:
                         st.error(f"Error creating download button: {str(e)}")
-                    
-                    # Show HTML code in a simple text area
-                    st.markdown("**📄 HTML Code:**")
-                    st.code(message["html_content"], language="html")
-                    
-                    st.markdown("---")
 
-# Sidebar
-with st.sidebar:
-    st.markdown('<div class="sidebar-header">🌐 HTML Generator</div>', unsafe_allow_html=True)
-    
-    # Personality selector
-    selected_personality = st.selectbox(
-        "Choose your AI personality:",
-        list(PERSONALITIES.keys()),
-        index=list(PERSONALITIES.keys()).index(st.session_state.current_personality),
-        key="personality_selector"
-    )
-    
-    if selected_personality != st.session_state.current_personality:
-        st.session_state.current_personality = selected_personality
-        # Add personality change message
-        add_message("assistant", f"Switched to {selected_personality} mode! {PERSONALITIES[selected_personality]['greeting']}", selected_personality)
-        st.rerun()
-    
-    st.markdown(f"**Current:** {selected_personality}")
-    st.markdown(f"*{PERSONALITIES[selected_personality]['description']}*")
-    
-    st.markdown("---")
-    
-    # API Key Status
-    groq_client = get_groq_client()
-    if groq_client:
-        st.success("✅ Groq API connected")
-        
-        # Test API button
-        if st.button("🧪 Test Groq API", key="test_api"):
-            try:
-                with st.spinner("Testing Groq API..."):
-                    test_response = groq_client.chat.completions.create(
-                        messages=[{"role": "user", "content": "Say hello"}],
-                        model="llama3-70b-8192",
-                        max_tokens=50
-                    )
-                    test_result = test_response.choices[0].message.content
-                    st.success(f"✅ API Test Successful! Response: {test_result}")
-            except Exception as e:
-                st.error(f"❌ API Test Failed: {str(e)}")
-    else:
-        st.error("❌ Groq API not configured")
-        st.info("Add your Groq API key to Streamlit secrets or environment variables")
-    
-    st.markdown("---")
-    
-    # Clear chat button
-    if st.button("🗑️ Clear Chat", type="secondary", key="clear_chat"):
-        st.session_state.messages = []
-        st.rerun()
-    
-    # Export chat
-    if st.button("📤 Export Chat", type="secondary", key="export_chat"):
-        if st.session_state.messages:
-            chat_data = {
-                "timestamp": datetime.now().isoformat(),
-                "messages": st.session_state.messages
-            }
-            st.download_button(
-                label="Download Chat",
-                data=json.dumps(chat_data, indent=2),
-                file_name=f"chat_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json",
-                key="download_chat"
-            )
-    
-    st.markdown("---")
-    
-    # Chat statistics
-    if st.session_state.messages:
-        user_messages = len([m for m in st.session_state.messages if m["role"] == "user"])
-        bot_messages = len([m for m in st.session_state.messages if m["role"] == "assistant"])
-        html_generated = len([m for m in st.session_state.messages if m.get("html_content")])
-        
-        st.markdown("**📊 Chat Statistics:**")
-        st.markdown(f"• Your messages: {user_messages}")
-        st.markdown(f"• AI responses: {bot_messages}")
-        st.markdown(f"• HTML pages generated: {html_generated}")
-        st.markdown(f"• Total messages: {len(st.session_state.messages)}")
-
-# Main chat interface
-st.markdown('<div class="main-header">🌐 AI HTML Generator</div>', unsafe_allow_html=True)
+# Main interface
+st.markdown('<div class="main-header">💕 Build something lovable</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Describe the website you want to create and I\'ll generate it for you!</div>', unsafe_allow_html=True)
 
 # Welcome message if no messages yet
 if not st.session_state.messages:
@@ -430,34 +337,38 @@ if not st.session_state.messages:
 # Display chat messages
 display_chat()
 
-# Chat input
-with st.container():
-    user_input = st.chat_input("Describe the website you want to create...", key="chat_input")
+# Chat input at bottom
+st.markdown('<div class="chat-input-container">', unsafe_allow_html=True)
+col1, col2 = st.columns([4, 1])
+
+with col1:
+    user_input = st.text_input("", placeholder="Describe the website you want to create...", key="chat_input", label_visibility="collapsed")
+
+with col2:
+    submit_button = st.button("Generate", key="submit_button")
+
+if submit_button and user_input:
+    # Add user message
+    add_message("user", user_input)
     
-    if user_input:
-        # Add user message
-        add_message("user", user_input)
+    # Generate HTML with Groq
+    with st.spinner("🤖 Generating your website..."):
+        html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
         
-        # Generate HTML with Groq
-        with st.spinner("🤖 Generating your website..."):
-            html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
-            
-            if html_content:
-                response = f"✅ Your website has been generated successfully! You can view it below and download the HTML file."
-                add_message("assistant", response, st.session_state.current_personality, html_content)
-            else:
-                response = f"❌ Sorry, I couldn't generate the website. Error: {error}"
-                add_message("assistant", response, st.session_state.current_personality)
-        
-        st.rerun()
+        if html_content:
+            response = f"✅ Your website has been generated successfully! You can view it below and download the HTML file."
+            add_message("assistant", response, st.session_state.current_personality, html_content)
+        else:
+            response = f"❌ Sorry, I couldn't generate the website. Error: {error}"
+            add_message("assistant", response, st.session_state.current_personality)
+    
+    st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer
-st.markdown("---")
-st.markdown(
-    """
-    <div style="text-align: center; color: #666; font-size: 0.8rem;">
-        Made with ❤️ using Streamlit and Groq | AI HTML Generator v1.0
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<div class="footer">
+    Made with ❤️ using Streamlit and Groq | Build something lovable
+</div>
+""", unsafe_allow_html=True)
