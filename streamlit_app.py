@@ -481,7 +481,14 @@ else:
             """, unsafe_allow_html=True)
             publish_button = st.button("🚀 Publish", key="publish_button", help="Publish your website")
             if publish_button:
-                st.success("✅ Website published successfully!")
+                try:
+                    file_path, error = save_and_open_html(st.session_state.current_html, "Published Website")
+                    if file_path:
+                        st.success("✅ Website opened in new browser tab!")
+                    else:
+                        st.error(f"❌ Could not open browser: {error}")
+                except Exception as e:
+                    st.error(f"❌ Error opening browser: {str(e)}")
         
         st.markdown("---")
         
