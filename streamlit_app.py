@@ -460,7 +460,7 @@ def display_chat():
                     
                     # Show HTML code in a simple text area
                     st.markdown("**📄 HTML Code:**")
-                    st.code(message["html_content"], language="html", key=f"html_code_{i}")
+                    st.code(message["html_content"], language="html")
                     
                     st.markdown("---")
 
