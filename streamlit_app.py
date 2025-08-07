@@ -430,30 +430,39 @@ def display_chat():
                 
                 # Show HTML preview if available
                 if message.get("html_content"):
-                    with st.expander("🌐 View Generated Website", expanded=True, key=f"expander_{i}"):
-                        st.markdown("""
-                        <div class="success-message">
-                            ✅ HTML generated successfully! View the website below.
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        # Display HTML in Streamlit
-                        st.markdown('<div class="html-container">', unsafe_allow_html=True)
-                        components.html(message["html_content"], height=600, scrolling=True, key=f"html_{i}")
-                        st.markdown('</div>', unsafe_allow_html=True)
-                        
-                        # Download button with unique key
+                    # Success message
+                    st.markdown("""
+                    <div class="success-message">
+                        ✅ HTML generated successfully! View the website below.
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Display HTML in Streamlit with a simple container
+                    st.markdown('<div class="html-container">', unsafe_allow_html=True)
+                    try:
+                        components.html(message["html_content"], height=600, scrolling=True, key=f"html_display_{i}")
+                    except Exception as e:
+                        st.error(f"Error rendering HTML: {str(e)}")
+                        st.info("HTML content is available for download below.")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # Download button
+                    try:
                         st.download_button(
                             label="📥 Download HTML File",
                             data=message["html_content"],
-                            file_name=f"generated_website_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                            file_name=f"generated_website_{message['timestamp'].replace(':', '-')}.html",
                             mime="text/html",
-                            key=f"download_{i}"
+                            key=f"download_btn_{i}"
                         )
-                        
-                        # Show HTML code in collapsible section
-                        with st.expander("📄 View HTML Code", key=f"code_expander_{i}"):
-                            st.code(message["html_content"], language="html", key=f"code_{i}")
+                    except Exception as e:
+                        st.error(f"Error creating download button: {str(e)}")
+                    
+                    # Show HTML code in a simple text area
+                    st.markdown("**📄 HTML Code:**")
+                    st.code(message["html_content"], language="html", key=f"html_code_{i}")
+                    
+                    st.markdown("---")
 
 # Sidebar
 with st.sidebar:
