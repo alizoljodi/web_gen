@@ -240,17 +240,20 @@ def generate_html_with_groq(prompt, personality):
     except Exception as e:
         return None, f"Error generating HTML: {str(e)}"
 
-def save_html_file(html_content, prompt):
-    """Save HTML to file for download"""
+def save_and_open_html(html_content, prompt):
+    """Save HTML to file and open in browser"""
     try:
         # Create a temporary file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
             f.write(html_content)
             file_path = f.name
         
+        # Open in browser
+        webbrowser.open(f'file://{file_path}')
+        
         return file_path, None
     except Exception as e:
-        return None, f"Error saving HTML: {str(e)}"
+        return None, f"Error saving/opening HTML: {str(e)}"
 
 def add_message(role, content, personality=None, html_content=None):
     """Add a message to the chat history"""
@@ -262,6 +265,17 @@ def add_message(role, content, personality=None, html_content=None):
         "personality": personality,
         "html_content": html_content
     })
+    
+    # If HTML content is provided, open it in browser
+    if html_content:
+        try:
+            file_path, error = save_and_open_html(html_content, content)
+            if file_path:
+                st.success("🌐 Generated website opened in new browser tab!")
+            else:
+                st.warning(f"⚠️ Could not open browser: {error}")
+        except Exception as e:
+            st.warning(f"⚠️ Could not open browser: {str(e)}")
 
 def display_chat():
     """Display the chat messages"""
@@ -294,7 +308,7 @@ def display_chat():
                     # Success message
                     st.markdown("""
                     <div class="success-message">
-                        ✅ HTML generated successfully! View the website below.
+                        ✅ HTML generated successfully! View the website below and in your browser.
                     </div>
                     """, unsafe_allow_html=True)
                     
