@@ -1,16 +1,21 @@
-# 💕 Lovable - Web Generator
+# 🤖 AI Chatbot - Streamlit App
 
-A beautiful Streamlit app that generates complete HTML web pages using AI. Built with the same stunning UI as the original Gradio app.
+A modern, interactive chatbot built with Streamlit that can be deployed on Streamlit Cloud.
 
 ## ✨ Features
 
-- **AI-Powered Web Generation**: Uses Groq's Llama 3.1 70B model to generate complete HTML pages
-- **Beautiful UI**: Stunning gradient design with glassmorphism effects
-- **Real-time Generation**: Instant HTML generation with progress indicators
-- **Browser Integration**: Automatically opens generated pages in your browser
-- **Download Functionality**: Download generated HTML files
-- **Responsive Design**: Works perfectly on all devices
-- **Modern Styling**: Professional gradients, animations, and typography
+- **Multiple AI Personalities**: Choose from 4 different chatbot personalities
+  - 🤖 Friendly Assistant
+  - 💻 Tech Expert  
+  - ✨ Creative Writer
+  - 🧘‍♂️ Sage Advisor
+
+- **Modern UI**: Beautiful gradient design with custom styling
+- **Chat History**: Persistent conversation history during session
+- **Real-time Chat**: Instant responses with typing indicators
+- **Export Functionality**: Download chat conversations as JSON
+- **Statistics**: Track message counts and conversation metrics
+- **Responsive Design**: Works on desktop and mobile devices
 
 ## 🚀 Quick Start
 
@@ -21,17 +26,12 @@ A beautiful Streamlit app that generates complete HTML web pages using AI. Built
    pip install -r requirements.txt
    ```
 
-2. **Set up your Groq API key**:
-   ```bash
-   export groq_api="your-groq-api-key-here"
-   ```
-
-3. **Run the app**:
+2. **Run the app**:
    ```bash
    streamlit run streamlit_app.py
    ```
 
-4. **Open your browser** and go to `http://localhost:8501`
+3. **Open your browser** and go to `http://localhost:8501`
 
 ### Streamlit Cloud Deployment
 
@@ -47,49 +47,47 @@ A beautiful Streamlit app that generates complete HTML web pages using AI. Built
    - **Main file path**: `streamlit_app.py`
    - **Python version**: 3.9 or higher
 
-5. **Add your Groq API key** in the Streamlit Cloud secrets:
-   - Go to your app settings
-   - Add secret: `groq_api = "your-groq-api-key-here"`
+5. **Click "Deploy"** and wait for the build to complete
 
-6. **Click "Deploy"** and wait for the build to complete
-
-7. **Your app will be live** at a URL like: `https://your-app-name.streamlit.app`
+6. **Your app will be live** at a URL like: `https://your-app-name.streamlit.app`
 
 ## 🎯 How to Use
 
-1. **Enter a Prompt**: Describe the website you want to create
-   - Example: "Create a modern portfolio website for a photographer"
-   - Example: "Build a restaurant landing page with menu and contact form"
-   - Example: "Generate an e-commerce site for selling handmade jewelry"
-
-2. **Click Generate**: Press the ↑ button to start generation
-
-3. **Watch the Magic**: See real-time progress as AI generates your webpage
-
-4. **View Results**: The generated page opens automatically in your browser
-
-5. **Download**: Save the HTML file for further customization
+1. **Choose a Personality**: Use the sidebar to select your preferred AI personality
+2. **Start Chatting**: Type your message in the chat input at the bottom
+3. **Switch Personalities**: Change personalities anytime during the conversation
+4. **Export Chats**: Download your conversation history as a JSON file
+5. **Clear Chat**: Start a fresh conversation with the clear button
 
 ## 🛠️ Customization
 
+### Adding New Personalities
+
+To add a new personality, edit the `PERSONALITIES` dictionary in `streamlit_app.py`:
+
+```python
+"Your New Personality": {
+    "description": "Description of your personality",
+    "greeting": "Initial greeting message",
+    "responses": [
+        "Response 1",
+        "Response 2",
+        "Response 3"
+    ]
+}
+```
+
 ### Modifying the UI
 
-The app uses custom CSS for the beautiful gradient design. You can modify the styles in the `st.markdown()` section at the top of the file.
+The app uses custom CSS for styling. You can modify the styles in the `st.markdown()` section at the top of the file.
 
-### Enhancing Generation
+### Enhancing Responses
 
-The `generate_html_with_groq()` function handles HTML generation. You can enhance it by:
-- Modifying the system prompt for different styles
-- Adding more specific instructions for certain website types
-- Integrating with other AI models
-- Adding more interactive features
-
-### Environment Variables
-
-```bash
-# Required for Groq API
-groq_api=your-groq-api-key-here
-```
+The `generate_response()` function handles response generation. You can enhance it by:
+- Adding more keyword detection
+- Implementing more sophisticated response logic
+- Integrating with external APIs
+- Adding context awareness
 
 ## 📁 File Structure
 
@@ -97,15 +95,24 @@ groq_api=your-groq-api-key-here
 ├── streamlit_app.py      # Main application file
 ├── requirements.txt      # Python dependencies
 ├── README_STREAMLIT.md  # This file
-├── .streamlit/config.toml # Streamlit configuration
-└── .gitignore          # Git ignore file
+└── .gitignore          # Git ignore file (optional)
 ```
 
 ## 🔧 Configuration
 
+### Environment Variables
+
+The app doesn't require any environment variables for basic functionality, but you can add them for enhanced features:
+
+```bash
+# Optional: Add API keys for external services
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
+```
+
 ### Streamlit Configuration
 
-The `.streamlit/config.toml` file contains optimal settings:
+Create a `.streamlit/config.toml` file for custom Streamlit settings:
 
 ```toml
 [server]
@@ -115,56 +122,49 @@ enableXsrfProtection = false
 
 [browser]
 gatherUsageStats = false
-
-[theme]
-primaryColor = "#667eea"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f0f2f6"
-textColor = "#262730"
 ```
 
 ## 🚀 Deployment Tips
 
-1. **API Key Security**: Always use Streamlit Cloud secrets for API keys
+1. **Keep it Simple**: Start with the basic version before adding complex features
 2. **Test Locally**: Always test your app locally before deploying
-3. **Monitor Usage**: Keep track of your Groq API usage
-4. **Error Handling**: The app includes fallback HTML for API failures
-5. **Performance**: The app is optimized for fast generation
+3. **Monitor Logs**: Check Streamlit Cloud logs if deployment fails
+4. **Update Dependencies**: Keep your requirements.txt up to date
+5. **Use Environment Variables**: For sensitive data like API keys
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **API Key Error**:
-   - Check that your Groq API key is set correctly
-   - Verify the key has sufficient credits
-   - Test the key with a simple API call
+1. **App won't deploy**:
+   - Check that `streamlit_app.py` is in the root directory
+   - Verify `requirements.txt` exists and is valid
+   - Ensure Python version compatibility
 
-2. **Generation Fails**:
-   - Check the browser console for errors
-   - Verify your prompt is clear and specific
-   - Try a simpler prompt first
+2. **Import errors**:
+   - Make sure all dependencies are in `requirements.txt`
+   - Check for typos in import statements
 
-3. **Browser Doesn't Open**:
-   - Check if pop-ups are blocked
-   - Verify the HTML file is created in temp directory
-   - Try manually opening the generated file
+3. **UI not loading**:
+   - Clear browser cache
+   - Check browser console for errors
+   - Verify CSS syntax
 
 ### Getting Help
 
 - Check [Streamlit documentation](https://docs.streamlit.io/)
 - Visit [Streamlit community](https://discuss.streamlit.io/)
-- Review [Groq API documentation](https://console.groq.com/docs)
+- Review [Streamlit Cloud docs](https://docs.streamlit.io/streamlit-community-cloud)
 
 ## 📈 Future Enhancements
 
-- [ ] Multiple AI model support
-- [ ] Template-based generation
-- [ ] CSS framework integration
-- [ ] Real-time collaboration
-- [ ] Version control for generated pages
-- [ ] Advanced customization options
-- [ ] Integration with hosting platforms
+- [ ] Integration with OpenAI API for more intelligent responses
+- [ ] Voice input/output capabilities
+- [ ] File upload and analysis features
+- [ ] Multi-language support
+- [ ] User authentication and chat history persistence
+- [ ] Advanced analytics and insights
+- [ ] Custom training data support
 
 ## 📄 License
 
@@ -176,4 +176,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-**Made with ❤️ using Streamlit and Groq**
+**Made with ❤️ using Streamlit**
