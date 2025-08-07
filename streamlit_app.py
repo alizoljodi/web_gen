@@ -404,7 +404,7 @@ def add_message(role, content, personality=None, html_content=None):
 
 def display_chat():
     """Display the chat messages"""
-    for message in st.session_state.messages:
+    for i, message in enumerate(st.session_state.messages):
         with st.container():
             if message["role"] == "user":
                 st.markdown(f"""
@@ -430,7 +430,7 @@ def display_chat():
                 
                 # Show HTML preview if available
                 if message.get("html_content"):
-                    with st.expander("🌐 View Generated Website", expanded=True):
+                    with st.expander("🌐 View Generated Website", expanded=True, key=f"expander_{i}"):
                         st.markdown("""
                         <div class="success-message">
                             ✅ HTML generated successfully! View the website below.
@@ -439,20 +439,21 @@ def display_chat():
                         
                         # Display HTML in Streamlit
                         st.markdown('<div class="html-container">', unsafe_allow_html=True)
-                        components.html(message["html_content"], height=600, scrolling=True)
+                        components.html(message["html_content"], height=600, scrolling=True, key=f"html_{i}")
                         st.markdown('</div>', unsafe_allow_html=True)
                         
-                        # Download button
+                        # Download button with unique key
                         st.download_button(
                             label="📥 Download HTML File",
                             data=message["html_content"],
                             file_name=f"generated_website_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
-                            mime="text/html"
+                            mime="text/html",
+                            key=f"download_{i}"
                         )
                         
                         # Show HTML code in collapsible section
-                        with st.expander("📄 View HTML Code"):
-                            st.code(message["html_content"], language="html")
+                        with st.expander("📄 View HTML Code", key=f"code_expander_{i}"):
+                            st.code(message["html_content"], language="html", key=f"code_{i}")
 
 # Sidebar
 with st.sidebar:
@@ -462,7 +463,8 @@ with st.sidebar:
     selected_personality = st.selectbox(
         "Choose your AI personality:",
         list(PERSONALITIES.keys()),
-        index=list(PERSONALITIES.keys()).index(st.session_state.current_personality)
+        index=list(PERSONALITIES.keys()).index(st.session_state.current_personality),
+        key="personality_selector"
     )
     
     if selected_personality != st.session_state.current_personality:
@@ -487,12 +489,12 @@ with st.sidebar:
     st.markdown("---")
     
     # Clear chat button
-    if st.button("🗑️ Clear Chat", type="secondary"):
+    if st.button("🗑️ Clear Chat", type="secondary", key="clear_chat"):
         st.session_state.messages = []
         st.rerun()
     
     # Export chat
-    if st.button("📤 Export Chat", type="secondary"):
+    if st.button("📤 Export Chat", type="secondary", key="export_chat"):
         if st.session_state.messages:
             chat_data = {
                 "timestamp": datetime.now().isoformat(),
@@ -502,7 +504,8 @@ with st.sidebar:
                 label="Download Chat",
                 data=json.dumps(chat_data, indent=2),
                 file_name=f"chat_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json"
+                mime="application/json",
+                key="download_chat"
             )
     
     st.markdown("---")
@@ -531,7 +534,7 @@ display_chat()
 
 # Chat input
 with st.container():
-    user_input = st.chat_input("Describe the website you want to create...")
+    user_input = st.chat_input("Describe the website you want to create...", key="chat_input")
     
     if user_input:
         # Add user message
