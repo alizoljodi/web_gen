@@ -134,6 +134,15 @@ st.markdown("""
         padding-top: 2rem;
         padding-bottom: 8rem;
     }
+
+    .download-section {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -378,6 +387,8 @@ else:
             padding: 1rem;
             background: #f8f9fa;
             border-radius: 0.5rem;
+            width: 100%;
+            box-sizing: border-box;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -454,17 +465,6 @@ else:
                 )
             except Exception as e:
                 st.error(f"Error creating download button: {str(e)}")
-            
-            # Open in browser button
-            if st.button("🌐 Open in Browser", key="open_browser"):
-                try:
-                    file_path, error = save_and_open_html(st.session_state.current_html, "Generated Website")
-                    if file_path:
-                        st.success("✅ Website opened in browser!")
-                    else:
-                        st.error(f"❌ Could not open browser: {error}")
-                except Exception as e:
-                    st.error(f"❌ Error opening browser: {str(e)}")
             
             st.markdown('</div>', unsafe_allow_html=True)
         else:
