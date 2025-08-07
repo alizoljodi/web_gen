@@ -331,196 +331,8 @@ def display_chat():
                 """, unsafe_allow_html=True)
 
 # Main interface
-if not st.session_state.show_results:
-    # Initial page - ChatGPT style
-    st.markdown('<div class="main-header">💕 Build something lovable</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Describe the website you want to create and I\'ll generate it for you!</div>', unsafe_allow_html=True)
-
-    # Display chat messages
-    display_chat()
-
-    # Chat input at bottom
-    st.markdown('<div class="chat-input-container">', unsafe_allow_html=True)
-    col1, col2 = st.columns([4, 1])
-
-    with col1:
-        user_input = st.text_input("", placeholder="Describe the website you want to create...", key="chat_input", label_visibility="collapsed")
-
-    with col2:
-        submit_button = st.button("Generate", key="submit_button")
-
-    if submit_button and user_input:
-        # Add user message
-        add_message("user", user_input)
-        
-        # Generate HTML with Groq
-        with st.spinner("🤖 Generating your website..."):
-            html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
-            
-            if html_content:
-                st.session_state.current_html = html_content
-                st.session_state.show_results = True
-                st.rerun()
-            else:
-                response = f"❌ Sorry, I couldn't generate the website. Error: {error}"
-                add_message("assistant", response, st.session_state.current_personality)
-        
-        st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-else:
-    # Results page - Two column layout
-    st.markdown("""
-    <style>
-        .results-header {
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 2rem;
-            color: #333;
-        }
-        
-        .chat-column {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .results-column {
-            background: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .back-button {
-            margin-bottom: 1rem;
-        }
-        
-        .download-section {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 0.5rem;
-            width: 100%;
-            box-sizing: border-box;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Back button
-    if st.button("← Back to Chat", key="back_button"):
-        st.session_state.show_results = False
-        st.rerun()
-    
-    #st.markdown('<div class="results-header">🌐 Generated Website Results</div>', unsafe_allow_html=True)
-    
-    # Two column layout
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        #st.markdown('<div class="chat-column">', unsafe_allow_html=True)
-        st.markdown("**💬 Continue Chat**")
-        st.markdown("---")
-        
-        # Display chat messages
-        display_chat()
-        
-        # Chat input for continuing conversation
-        user_input = st.text_input("", placeholder="Ask for modifications or improvements...", key="continue_chat_input", label_visibility="collapsed")
-        col_input1, col_input2 = st.columns([3, 1])
-        
-        with col_input2:
-            continue_button = st.button("Send", key="continue_button")
-        
-        if continue_button and user_input:
-            add_message("user", user_input)
-            
-            # Generate updated HTML
-            with st.spinner("🤖 Updating your website..."):
-                html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
-                
-                if html_content:
-                    response = f"✅ Website updated successfully!"
-                    add_message("assistant", response, st.session_state.current_personality, html_content)
-                    st.session_state.current_html = html_content
-                    st.rerun()
-                else:
-                    response = f"❌ Sorry, I couldn't update the website. Error: {error}"
-                    add_message("assistant", response, st.session_state.current_personality)
-                    st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with col2:
-        #st.markdown('<div class="results-column">', unsafe_allow_html=True)
-        
-        # Header with Publish button
-        col_header1, col_header2 = st.columns([3, 1])
-        
-        with col_header1:
-            st.markdown("**🌐 Generated Website**")
-        
-        with col_header2:
-            st.markdown("""
-            <style>
-            div[data-testid="stButton"] button[key="publish_button"] {
-                background-color: #dc3545 !important;
-                color: white !important;
-                border: none !important;
-                border-radius: 0.5rem !important;
-                padding: 0.5rem 1rem !important;
-                font-weight: 500 !important;
-                transition: background 0.3s ease !important;
-            }
-            div[data-testid="stButton"] button[key="publish_button"]:hover {
-                background-color: #c82333 !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            publish_button = st.button("🚀 Publish", key="publish_button", help="Publish your website")
-            if publish_button:
-                st.session_state.show_published = True
-                st.rerun()
-        
-        st.markdown("---")
-        
-        if st.session_state.current_html:
-            # Display the generated HTML
-            try:
-                components.html(st.session_state.current_html, height=800, scrolling=True, width=1000)
-            except Exception as e:
-                st.error(f"Error rendering HTML: {str(e)}")
-                st.info("HTML content is available for download below.")
-            
-            # Download section
-            st.markdown('<div class="download-section">', unsafe_allow_html=True)
-            st.markdown("**📥 Download Options**")
-            
-            # Download button
-            try:
-                st.download_button(
-                    label="📥 Download HTML File",
-                    data=st.session_state.current_html,
-                    file_name=f"generated_website_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
-                    mime="text/html",
-                    key="download_btn_results"
-                )
-            except Exception as e:
-                st.error(f"Error creating download button: {str(e)}")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.info("No website generated yet. Start a conversation to see results here.")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# Published page
-elif st.session_state.show_published:
+if st.session_state.show_published:
+    # Published page
     st.markdown("""
     <style>
         .published-header {
@@ -584,6 +396,194 @@ elif st.session_state.show_published:
     else:
         st.info("No website to display.")
     
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.show_results:
+    # Results page - Two column layout
+    st.markdown("""
+    <style>
+        .results-header {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+        
+        .chat-column {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .results-column {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .back-button {
+            margin-bottom: 1rem;
+        }
+        
+        .download-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Back button
+    if st.button("← Back to Chat", key="back_button"):
+        st.session_state.show_results = False
+        st.rerun()
+    
+    st.markdown('<div class="results-header">🌐 Generated Website Results</div>', unsafe_allow_html=True)
+    
+    # Two column layout
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        #st.markdown('<div class="chat-column">', unsafe_allow_html=True)
+        st.markdown("**💬 Continue Chat**")
+        st.markdown("---")
+        
+        # Display chat messages
+        display_chat()
+        
+        # Chat input for continuing conversation
+        user_input = st.text_input("", placeholder="Ask for modifications or improvements...", key="continue_chat_input", label_visibility="collapsed")
+        col_input1, col_input2 = st.columns([3, 1])
+        
+        with col_input2:
+            continue_button = st.button("Send", key="continue_button")
+        
+        if continue_button and user_input:
+            add_message("user", user_input)
+            
+            # Generate updated HTML
+            with st.spinner("🤖 Updating your website..."):
+                html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
+                
+                if html_content:
+                    response = f"✅ Website updated successfully!"
+                    add_message("assistant", response, st.session_state.current_personality, html_content)
+                    st.session_state.current_html = html_content
+                    st.rerun()
+                else:
+                    response = f"❌ Sorry, I couldn't update the website. Error: {error}"
+                    add_message("assistant", response, st.session_state.current_personality)
+                    st.rerun()
+        
+        #st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        #st.markdown('<div class="results-column">', unsafe_allow_html=True)
+        
+        # Header with Publish button
+        col_header1, col_header2 = st.columns([3, 1])
+        
+        with col_header1:
+            st.markdown("**🌐 Generated Website**")
+        
+        with col_header2:
+            st.markdown("""
+            <style>
+            div[data-testid="stButton"] button[key="publish_button"] {
+                background-color: #dc3545 !important;
+                color: white !important;
+                border: none !important;
+                border-radius: 0.5rem !important;
+                padding: 0.5rem 1rem !important;
+                font-weight: 500 !important;
+                transition: background 0.3s ease !important;
+            }
+            div[data-testid="stButton"] button[key="publish_button"]:hover {
+                background-color: #c82333 !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            publish_button = st.button("🚀 Publish", key="publish_button", help="Publish your website")
+            if publish_button:
+                st.session_state.show_published = True
+                st.rerun()
+        
+        st.markdown("---")
+        
+        if st.session_state.current_html:
+            # Display the generated HTML
+            try:
+                components.html(st.session_state.current_html, height=800, scrolling=True)
+            except Exception as e:
+                st.error(f"Error rendering HTML: {str(e)}")
+                st.info("HTML content is available for download below.")
+            
+            # Download section
+            st.markdown('<div class="download-section">', unsafe_allow_html=True)
+            st.markdown("**📥 Download Options**")
+            
+            # Download button
+            try:
+                st.download_button(
+                    label="📥 Download HTML File",
+                    data=st.session_state.current_html,
+                    file_name=f"generated_website_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                    mime="text/html",
+                    key="download_btn_results"
+                )
+            except Exception as e:
+                st.error(f"Error creating download button: {str(e)}")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("No website generated yet. Start a conversation to see results here.")
+        
+        #st.markdown('</div>', unsafe_allow_html=True)
+
+else:
+    # Initial page - ChatGPT style
+    st.markdown('<div class="main-header">💕 Build something lovable</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Describe the website you want to create and I\'ll generate it for you!</div>', unsafe_allow_html=True)
+
+    # Display chat messages
+    display_chat()
+
+    # Chat input at bottom
+    st.markdown('<div class="chat-input-container">', unsafe_allow_html=True)
+    col1, col2 = st.columns([4, 1])
+
+    with col1:
+        user_input = st.text_input("", placeholder="Describe the website you want to create...", key="chat_input", label_visibility="collapsed")
+
+    with col2:
+        submit_button = st.button("Generate", key="submit_button")
+
+    if submit_button and user_input:
+        # Add user message
+        add_message("user", user_input)
+        
+        # Generate HTML with Groq
+        with st.spinner("🤖 Generating your website..."):
+            html_content, error = generate_html_with_groq(user_input, st.session_state.current_personality)
+            
+            if html_content:
+                st.session_state.current_html = html_content
+                st.session_state.show_results = True
+                st.rerun()
+            else:
+                response = f"❌ Sorry, I couldn't generate the website. Error: {error}"
+                add_message("assistant", response, st.session_state.current_personality)
+        
+        st.rerun()
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer
