@@ -220,7 +220,8 @@ def generate_html_with_groq(prompt, personality):
         
         Generate a complete, functional HTML page that matches this request. 
         Include all necessary CSS and JavaScript inline. 
-        Make it beautiful, modern, and creative.
+        Make it beautiful, modern, and creative
+        Use a modern design with a focus on user experience. Use colors that are pleasing to the eye.
         """
         
         # Call Groq API
