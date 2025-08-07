@@ -522,7 +522,7 @@ elif st.session_state.show_results:
         if st.session_state.current_html:
             # Display the generated HTML
             try:
-                components.html(st.session_state.current_html, height=800, scrolling=True)
+                components.html(st.session_state.current_html, height=800, width=1000, scrolling=True)
             except Exception as e:
                 st.error(f"Error rendering HTML: {str(e)}")
                 st.info("HTML content is available for download below.")
