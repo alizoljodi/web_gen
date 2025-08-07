@@ -395,7 +395,7 @@ else:
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        st.markdown('<div class="chat-column">', unsafe_allow_html=True)
+        #st.markdown('<div class="chat-column">', unsafe_allow_html=True)
         st.markdown("**💬 Continue Chat**")
         st.markdown("---")
         
@@ -429,7 +429,7 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        st.markdown('<div class="results-column">', unsafe_allow_html=True)
+        #st.markdown('<div class="results-column">', unsafe_allow_html=True)
         st.markdown("**🌐 Generated Website**")
         st.markdown("---")
         
