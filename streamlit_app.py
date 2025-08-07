@@ -3,292 +3,626 @@ import time
 import random
 from datetime import datetime
 import json
+import os
+import tempfile
+import webbrowser
+import base64
+from groq import Groq
 
 # Page configuration
 st.set_page_config(
-    page_title="AI Chatbot",
-    page_icon="🤖",
+    page_title="Lovable - Web Generator",
+    page_icon="💕",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for better styling
+# Initialize Groq client
+client = Groq(
+    api_key=os.environ.get("groq_api", "your-groq-api-key-here"),
+)
+
+# Custom CSS for Lovable-inspired design
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 3rem;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 2rem;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
     
-    .chat-message {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
+    body {
+        overflow: hidden;
+        height: 100vh;
+    }
+    
+    .gradient-bg {
+        background: linear-gradient(135deg, #ff8c42 0%, #ff6b6b 25%, #a855f7 75%, #7c3aed 100%);
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
         display: flex;
-        align-items: flex-start;
+        align-items: center;
+        justify-content: center;
     }
     
-    .user-message {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196f3;
+    .gradient-bg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter></defs><rect width="100" height="100" filter="url(%23noise)" opacity="0.1"/></svg>');
+        opacity: 0.1;
     }
     
-    .bot-message {
-        background-color: #f3e5f5;
-        border-left: 4px solid #9c27b0;
-    }
-    
-    .message-time {
-        font-size: 0.8rem;
-        color: #666;
-        margin-top: 0.5rem;
-    }
-    
-    .stButton > button {
-        width: 100%;
-        border-radius: 0.5rem;
-        font-weight: bold;
-    }
-    
-    .sidebar-header {
-        font-size: 1.5rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
+    .main-content {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         text-align: center;
+        padding: 1rem;
+        box-sizing: border-box;
+        max-height: 100vh;
+        overflow: hidden;
+        gap: 1rem;
+    }
+    
+    .content-wrapper {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .main-headline {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 0.3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .heart-icon {
+        width: 20px;
+        height: 20px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 10px;
+    }
+    
+    .sub-headline {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 1.5rem;
+    }
+    
+    .chat-input-container {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 800px;
+        width: 100%;
+        margin-bottom: 1rem;
+        position: relative;
+        max-height: 60vh;
+        overflow: hidden;
+    }
+    
+    .chat-input {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.1rem;
+        width: 100%;
+        outline: none;
+        resize: none;
+        padding-right: 60px;
+        min-height: 120px;
+        max-height: 70vh;
+    }
+    
+    .chat-input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .send-btn {
+        background: linear-gradient(45deg, #ff6b6b, #a855f7);
+        border: none;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s;
+        position: absolute;
+        right: 0px;
+        bottom: 50px;
+        font-size: 1.1rem;
+    }
+    
+    .send-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .processing-container {
+        background: linear-gradient(135deg, #ff8c42 0%, #ff6b6b 25%, #a855f7 75%, #7c3aed 100%);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-family: 'Segoe UI', sans-serif;
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    .processing-card {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 600px;
+        width: 100%;
+    }
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    
+    .log-container {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: left;
+        font-family: monospace;
+        font-size: 0.8rem;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 1rem;
+    }
+    
+    .html-code-display {
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 10px !important;
+        color: #e5e7eb !important;
+        font-family: 'Courier New', monospace !important;
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    .html-code-display textarea {
+        background: rgba(0, 0, 0, 0.3) !important;
+        color: #e5e7eb !important;
+        border: none !important;
+        font-family: 'Courier New', monospace !important;
+        font-size: 0.8rem !important;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+        .main-headline {
+            font-size: 1.8rem;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .sub-headline {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .chat-input-container {
+            margin: 0.3rem;
+            padding: 0.8rem;
+            max-height: 50vh;
+        }
+        
+        .send-btn {
+            right: -0px;
+            bottom: 30px;
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .main-content {
+            padding: 0.8rem;
+        }
+    }
+    
+    @media (max-height: 600px) {
+        .main-headline {
+            font-size: 1.6rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .sub-headline {
+            font-size: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        .chat-input-container {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            max-height: 40vh;
+        }
+    }
+    
+    /* Hide Streamlit elements */
+    .stApp {
+        background: transparent !important;
+    }
+    
+    .main .block-container {
+        padding: 0 !important;
+        max-width: none !important;
+    }
+    
+    /* Custom button styling */
+    .stButton > button {
+        background: linear-gradient(45deg, #ff6b6b, #a855f7) !important;
+        border: none !important;
+        border-radius: 50% !important;
+        width: 45px !important;
+        height: 45px !important;
+        color: white !important;
+        font-size: 1.1rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: transform 0.3s !important;
+    }
+    
+    .stButton > button:hover {
+        transform: scale(1.1) !important;
+    }
+    
+    /* Custom text area styling */
+    .stTextArea > div > div > textarea {
+        background: transparent !important;
+        border: none !important;
+        color: white !important;
+        font-size: 1.1rem !important;
+        resize: none !important;
+    }
+    
+    .stTextArea > div > div > textarea::placeholder {
+        color: rgba(255, 255, 255, 0.7) !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # Initialize session state
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "home"
 
-if 'current_personality' not in st.session_state:
-    st.session_state.current_personality = "Friendly Assistant"
+if 'generated_html' not in st.session_state:
+    st.session_state.generated_html = ""
 
-# Chatbot personalities
-PERSONALITIES = {
-    "Friendly Assistant": {
-        "description": "A helpful and friendly AI assistant",
-        "greeting": "Hello! I'm your friendly AI assistant. How can I help you today? 😊",
-        "responses": [
-            "That's interesting! Tell me more about that.",
-            "I'd be happy to help you with that!",
-            "That's a great question. Let me think about it...",
-            "I understand what you're saying. What would you like to know?",
-            "Thanks for sharing that with me!",
-            "I'm here to help you with anything you need.",
-            "That's a fascinating topic!",
-            "I appreciate you asking that question."
-        ]
-    },
-    "Tech Expert": {
-        "description": "A knowledgeable tech enthusiast",
-        "greeting": "Hey there! I'm your tech expert. Ready to dive into the latest in technology? 💻",
-        "responses": [
-            "From a technical perspective, that's quite interesting.",
-            "Let me break down the technical aspects for you.",
-            "In terms of technology, here's what you should know...",
-            "That's a great technical question!",
-            "The technology behind this is fascinating.",
-            "Let me explain the technical details...",
-            "This is a common challenge in tech.",
-            "From an engineering standpoint..."
-        ]
-    },
-    "Creative Writer": {
-        "description": "An imaginative and creative AI",
-        "greeting": "Hello! I'm your creative writing assistant. Let's craft something amazing together! ✨",
-        "responses": [
-            "That's a beautiful thought! Let me add some creative flair...",
-            "What an inspiring idea! Here's how I see it...",
-            "Let me paint a picture with words for you...",
-            "That's the kind of creativity I love!",
-            "Let's explore this idea together...",
-            "Your imagination is wonderful!",
-            "This reminds me of a story...",
-            "Let me weave some magic into this..."
-        ]
-    },
-    "Sage Advisor": {
-        "description": "A wise and philosophical AI",
-        "greeting": "Greetings, seeker of wisdom. I am here to share insights and guidance. 🧘‍♂️",
-        "responses": [
-            "That's a profound question that touches on deeper truths.",
-            "Let me share some wisdom with you...",
-            "This reminds me of an ancient saying...",
-            "In the grand scheme of things...",
-            "There's great wisdom in what you're asking.",
-            "Let me offer you some thoughtful perspective...",
-            "This is a question that has puzzled many throughout time.",
-            "Consider this perspective..."
-        ]
-    }
-}
+def open_html_string_in_browser(html_string, filename_prefix="temp_html"):
+    """Open HTML content in browser"""
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".html", prefix=filename_prefix, mode='w', encoding='utf-8') as tmp_file:
+            tmp_file.write(html_string)
+            tmp_path = tmp_file.name
 
-def generate_response(user_input, personality):
-    """Generate a response based on the selected personality"""
-    responses = PERSONALITIES[personality]["responses"]
-    
-    # Simple response generation based on keywords
-    user_input_lower = user_input.lower()
-    
-    if any(word in user_input_lower for word in ["hello", "hi", "hey"]):
-        return f"Hello! Nice to meet you! {random.choice(responses)}"
-    
-    elif any(word in user_input_lower for word in ["how are you", "how do you do"]):
-        return f"I'm doing great, thank you for asking! {random.choice(responses)}"
-    
-    elif any(word in user_input_lower for word in ["name", "who are you"]):
-        return f"I'm your {personality.lower()}. {random.choice(responses)}"
-    
-    elif any(word in user_input_lower for word in ["help", "assist"]):
-        return f"I'm here to help you! {random.choice(responses)} What would you like to know?"
-    
-    elif any(word in user_input_lower for word in ["thank", "thanks"]):
-        return f"You're very welcome! {random.choice(responses)}"
-    
-    elif any(word in user_input_lower for word in ["bye", "goodbye", "see you"]):
-        return f"Goodbye! It was wonderful chatting with you. {random.choice(responses)}"
-    
-    else:
-        # Generate contextual response
-        if personality == "Tech Expert":
-            return f"That's an interesting topic! From a technical perspective, {random.choice(responses)}"
-        elif personality == "Creative Writer":
-            return f"What an inspiring thought! {random.choice(responses)}"
-        elif personality == "Sage Advisor":
-            return f"That's a profound question. {random.choice(responses)}"
-        else:
-            return random.choice(responses)
+        webbrowser.open_new_tab(f'file://{os.path.abspath(tmp_path)}')
+        return True
+    except Exception as e:
+        st.error(f"Error opening browser: {e}")
+        return False
 
-def add_message(role, content, personality=None):
-    """Add a message to the chat history"""
-    timestamp = datetime.now().strftime("%H:%M")
-    st.session_state.messages.append({
-        "role": role,
-        "content": content,
-        "timestamp": timestamp,
-        "personality": personality
-    })
+def generate_html_with_groq(prompt):
+    """Generate HTML content using Groq API"""
+    try:
+        # Create a comprehensive system prompt for HTML generation
+        system_prompt = """You are an expert web developer and designer. Your task is to generate complete, functional HTML web pages based on user descriptions.
+Requirements:
+1. Generate complete HTML documents with proper DOCTYPE, head, and body tags
+2. Include embedded CSS for modern, responsive design
+3. Use beautiful gradients, modern typography, and smooth animations
+4. Make the design fully responsive (mobile-first approach)
+5. Include appropriate content sections based on the website type
+6. Use semantic HTML with proper accessibility features
+7. Include interactive elements like buttons, forms, and hover effects
+8. Use a color scheme that matches the website type
+9. Include features mentioned in the prompt (contact forms, pricing, gallery, etc.)
+10. Make the design professional and modern
+The HTML should be complete and ready to run in a browser. Include all necessary CSS inline and make it self-contained."""
 
-def display_chat():
-    """Display the chat messages"""
-    for message in st.session_state.messages:
-        with st.container():
-            if message["role"] == "user":
-                st.markdown(f"""
-                <div class="chat-message user-message">
-                    <div style="flex-grow: 1;">
-                        <strong>You:</strong><br>
-                        {message["content"]}
-                        <div class="message-time">{message["timestamp"]}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                personality = message.get("personality", "Assistant")
-                st.markdown(f"""
-                <div class="chat-message bot-message">
-                    <div style="flex-grow: 1;">
-                        <strong>{personality}:</strong><br>
-                        {message["content"]}
-                        <div class="message-time">{message["timestamp"]}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+        # Create the user prompt
+        user_prompt = f"""Create a beautiful, modern, and responsive HTML web page based on this description: {prompt}
+Generate a complete HTML document that includes:
+- Modern responsive design with CSS Grid and Flexbox
+- Beautiful gradients and animations
+- Professional typography and spacing
+- Interactive elements and hover effects
+- Content that matches the website type
+- Any specific features mentioned in the prompt
+Make sure the HTML is complete and ready to run in a browser."""
 
-# Sidebar
-with st.sidebar:
-    st.markdown('<div class="sidebar-header">🤖 Chatbot Settings</div>', unsafe_allow_html=True)
-    
-    # Personality selector
-    selected_personality = st.selectbox(
-        "Choose your AI personality:",
-        list(PERSONALITIES.keys()),
-        index=list(PERSONALITIES.keys()).index(st.session_state.current_personality)
-    )
-    
-    if selected_personality != st.session_state.current_personality:
-        st.session_state.current_personality = selected_personality
-        # Add personality change message
-        add_message("assistant", f"Switched to {selected_personality} mode! {PERSONALITIES[selected_personality]['greeting']}", selected_personality)
-        st.rerun()
-    
-    st.markdown(f"**Current:** {selected_personality}")
-    st.markdown(f"*{PERSONALITIES[selected_personality]['description']}*")
-    
-    st.markdown("---")
-    
-    # Clear chat button
-    if st.button("🗑️ Clear Chat", type="secondary"):
-        st.session_state.messages = []
-        st.rerun()
-    
-    # Export chat
-    if st.button("📤 Export Chat", type="secondary"):
-        if st.session_state.messages:
-            chat_data = {
-                "timestamp": datetime.now().isoformat(),
-                "messages": st.session_state.messages
-            }
-            st.download_button(
-                label="Download Chat",
-                data=json.dumps(chat_data, indent=2),
-                file_name=f"chat_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json"
-            )
-    
-    st.markdown("---")
-    
-    # Chat statistics
-    if st.session_state.messages:
-        user_messages = len([m for m in st.session_state.messages if m["role"] == "user"])
-        bot_messages = len([m for m in st.session_state.messages if m["role"] == "assistant"])
+        # Call Groq API
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model="llama3-70b-8192",
+            temperature=0.7,
+            max_tokens=4000,
+            top_p=1,
+            stream=False
+        )
         
-        st.markdown("**📊 Chat Statistics:**")
-        st.markdown(f"• Your messages: {user_messages}")
-        st.markdown(f"• AI responses: {bot_messages}")
-        st.markdown(f"• Total messages: {len(st.session_state.messages)}")
-
-# Main chat interface
-st.markdown('<div class="main-header">🤖 AI Chatbot</div>', unsafe_allow_html=True)
-
-# Welcome message if no messages yet
-if not st.session_state.messages:
-    add_message("assistant", PERSONALITIES[st.session_state.current_personality]["greeting"], st.session_state.current_personality)
-
-# Display chat messages
-display_chat()
-
-# Chat input
-with st.container():
-    user_input = st.chat_input("Type your message here...")
-    
-    if user_input:
-        # Add user message
-        add_message("user", user_input)
+        # Extract the generated HTML content
+        html_content = chat_completion.choices[0].message.content
         
-        # Generate and add bot response
-        with st.spinner("🤖 Thinking..."):
-            time.sleep(0.5)  # Simulate thinking time
-            response = generate_response(user_input, st.session_state.current_personality)
-            add_message("assistant", response, st.session_state.current_personality)
+        # Clean up the response
+        if html_content.startswith("```html"):
+            html_content = html_content[7:]
+        if html_content.endswith("```"):
+            html_content = html_content[:-3]
         
-        st.rerun()
-
-# Footer
-st.markdown("---")
-st.markdown(
-    """
-    <div style="text-align: center; color: #666; font-size: 0.8rem;">
-        Made with ❤️ using Streamlit | AI Chatbot v1.0
+        # Ensure we have a complete HTML document
+        if not html_content.strip().startswith("<!DOCTYPE html"):
+            html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Web Page</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }}
+        
+        .header {{
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }}
+        
+        .header h1 {{
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }}
+        
+        .header p {{
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }}
+        
+        .content {{
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+        }}
+        
+        .btn {{
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }}
+        
+        .btn:hover {{
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }}
+        
+        @media (max-width: 768px) {{
+            .container {{
+                padding: 1rem;
+            }}
+            
+            .header h1 {{
+                font-size: 2rem;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Generated Web Page</h1>
+            <p>Created from your prompt: "{prompt}"</p>
+        </div>
+        
+        <div class="content">
+            {html_content}
+        </div>
+        
+        <div class="footer" style="text-align: center; color: white; margin-top: 2rem; opacity: 0.8;">
+            <p>&copy; 2024 Generated Web Page. Created with ❤️ using AI.</p>
+        </div>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+</body>
+</html>"""
+        
+        return html_content
+        
+    except Exception as e:
+        st.error(f"Error calling Groq API: {e}")
+        return None
+
+def create_and_open_webpage(prompt):
+    """Generate HTML from prompt using Groq API"""
+    if not prompt or prompt.strip() == "":
+        return "Please enter a prompt to generate a web page.", None
+    
+    # Generate HTML content using Groq API
+    html_content = generate_html_with_groq(prompt)
+    
+    if html_content:
+        # Open the HTML content in the default browser
+        open_html_string_in_browser(html_content)
+        return html_content, "success"
+    else:
+        return "Failed to generate webpage. Please check your API key and try again.", None
+
+# Main app interface
+def main():
+    # Create the gradient background
+    st.markdown("""
+    <div class="gradient-bg">
+        <div class="main-content">
+            <div class="content-wrapper">
+                <div class="main-headline">
+                    Build something Lovable 💕
+                </div>
+                <div class="sub-headline">
+                    Create apps and websites by chatting with AI
+                </div>
+                
+                <div class="chat-input-container">
+                    <form>
+                        <textarea 
+                            class="chat-input" 
+                            placeholder="Ask Lovable to create a landing page..."
+                            rows="3"
+                            maxlength="1000"
+                        ></textarea>
+                        <button type="submit" class="send-btn">↑</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Create the input form
+    with st.container():
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            prompt_input = st.text_area(
+                label="",
+                placeholder="Ask Lovable to create a landing page...",
+                height=120,
+                max_chars=1000,
+                key="prompt_input"
+            )
+            
+            col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
+            with col_btn2:
+                generate_btn = st.button("↑", key="generate_btn")
+    
+    # Handle generation
+    if generate_btn and prompt_input:
+        st.session_state.current_page = "processing"
+        st.session_state.prompt = prompt_input
+        
+        # Show processing page
+        with st.container():
+            st.markdown("""
+            <div class="processing-container">
+                <div class="processing-card">
+                    <h2 style="margin-bottom: 1rem; font-size: 2rem;">🚀 The result</h2>
+                    <div class="spinner"></div>
+                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">Thinking...</p>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">Generating your webpage with AI</p>
+                    
+                    <div class="log-container">
+                        <div style="color: #4ade80;">✓ Initializing Groq client...</div>
+                        <div style="color: #4ade80;">✓ Analyzing prompt...</div>
+                        <div style="color: #fbbf24;">⏳ Calling Llama 3.1 70B model...</div>
+                        <div style="color: #fbbf24;">⏳ Generating HTML content...</div>
+                        <div style="color: #fbbf24;">⏳ Creating responsive design...</div>
+                        <div style="color: #fbbf24;">⏳ Adding interactive elements...</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Process the generation
+        with st.spinner("Generating webpage..."):
+            html_content, status = create_and_open_webpage(prompt_input)
+            
+            if status == "success":
+                st.session_state.generated_html = html_content
+                st.session_state.current_page = "result"
+                
+                # Show success message
+                st.success("🎉 Success! Your webpage has been generated and opened in a new tab!")
+                
+                # Show HTML code
+                st.subheader("📄 Generated HTML Code")
+                st.code(html_content, language="html")
+                
+                # Download button
+                st.download_button(
+                    label="📥 Download HTML File",
+                    data=html_content,
+                    file_name=f"generated_webpage_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                    mime="text/html"
+                )
+                
+                # Back button
+                if st.button("← Back to Home"):
+                    st.session_state.current_page = "home"
+                    st.rerun()
+            else:
+                st.error(html_content)
+                if st.button("← Back to Home"):
+                    st.session_state.current_page = "home"
+                    st.rerun()
+
+if __name__ == "__main__":
+    main()
