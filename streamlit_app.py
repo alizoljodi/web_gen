@@ -474,7 +474,7 @@ else:
             publish_button = st.button("🚀 Publish", key="publish_button", help="Publish your website")
             if publish_button:
                 try:
-                    file_path, error = save_and_open_html(st.session_state.current_html, "Published Website")
+                    file_path, error = save_and_open_html(st.session_state.current_html)
                     if file_path:
                         st.success("✅ Website opened in new browser tab!")
                     else:
