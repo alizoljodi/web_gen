@@ -440,7 +440,7 @@ def display_chat():
                     # Display HTML in Streamlit with a simple container
                     st.markdown('<div class="html-container">', unsafe_allow_html=True)
                     try:
-                        components.html(message["html_content"], height=600, scrolling=True, key=f"html_display_{i}")
+                        components.html(message["html_content"], height=600, scrolling=True)
                     except Exception as e:
                         st.error(f"Error rendering HTML: {str(e)}")
                         st.info("HTML content is available for download below.")
