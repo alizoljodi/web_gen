@@ -1,7 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
+from factory import BaseView
 
-class CSSStyles:
+class CSSStyles(BaseView):
     """Contains all CSS styling for the application"""
     
     @staticmethod
@@ -237,7 +238,7 @@ class CSSStyles:
         </style>
         """
 
-class ChatView:
+class ChatView(BaseView):
     """Handles chat interface display"""
     
     @staticmethod
@@ -288,7 +289,7 @@ class ChatView:
         st.markdown('</div>', unsafe_allow_html=True)
         return user_input, submit_button
 
-class ResultsView:
+class ResultsView(BaseView):
     """Handles results page display"""
     
     @staticmethod
@@ -366,7 +367,7 @@ class ResultsView:
         else:
             st.info("No website generated yet. Start a conversation to see results here.")
 
-class PublishedView:
+class PublishedView(BaseView):
     """Handles published page display"""
     
     @staticmethod
@@ -391,7 +392,7 @@ class PublishedView:
         else:
             st.info("No website to display.")
 
-class FooterView:
+class FooterView(BaseView):
     """Handles footer display"""
     
     @staticmethod

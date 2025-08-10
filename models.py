@@ -5,7 +5,9 @@ from datetime import datetime
 import groq
 import streamlit as st
 
-class Message:
+from factory import BaseModel
+
+class Message(BaseModel):
     """Represents a chat message"""
     def __init__(self, role, content, personality=None, html_content=None):
         self.role = role
@@ -23,7 +25,7 @@ class Message:
             "html_content": self.html_content
         }
 
-class ChatSession:
+class ChatSession(BaseModel):
     """Manages chat session state"""
     def __init__(self):
         self.messages = []
@@ -46,7 +48,7 @@ class ChatSession:
         """Clear all messages"""
         self.messages = []
 
-class HTMLGenerator:
+class HTMLGenerator(BaseModel):
     """Handles HTML generation using Groq API"""
     
     PERSONALITIES = {
@@ -116,7 +118,7 @@ class HTMLGenerator:
         except Exception as e:
             return None, f"Error generating HTML: {str(e)}"
 
-class FileManager:
+class FileManager(BaseModel):
     """Handles file operations"""
     
     @staticmethod

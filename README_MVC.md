@@ -51,6 +51,13 @@ Coordinates between Model and View, handles application flow and user interactio
 ### 🚀 **Main Application** (`streamlit_app.py`)
 Simple entry point that creates and runs the controller.
 
+### 🏭 **Factory Pattern** (`factory.py`)
+Implements the Factory pattern for creating models and views, providing:
+- **Flexibility**: Easy swapping of different implementations
+- **Extensibility**: Simple registration of custom components
+- **Dependency Injection**: Loose coupling between components
+- **Singleton Management**: Efficient instance reuse
+
 ## Benefits of MVC Refactoring
 
 ### ✅ **Separation of Concerns**
@@ -83,11 +90,13 @@ Simple entry point that creates and runs the controller.
 ```
 lovable/
 ├── __init__.py              # Python package marker
+├── factory.py               # Factory pattern for component creation
 ├── models.py                # Model layer (data & business logic)
 ├── views.py                 # View layer (UI & presentation)
 ├── controller.py            # Controller layer (application flow)
 ├── streamlit_app.py         # Main application entry point
 ├── requirements.txt         # Dependencies
+├── example_custom_components.py  # Example of using custom components
 └── README_MVC.md           # This file
 ```
 
@@ -123,3 +132,67 @@ The original monolithic `streamlit_app.py` has been completely refactored:
 - Main file now only contains the entry point
 
 This refactoring maintains 100% of the original functionality while providing a much cleaner, more maintainable codebase.
+
+## Factory Pattern Implementation
+
+### 🏭 **Overview**
+The Factory pattern has been implemented to provide flexible component creation and management. This allows for easy swapping of implementations and simple extension of the application.
+
+### 🔧 **Key Components**
+
+#### **BaseFactory** (Abstract)
+- Abstract base class for all factories
+- Defines the interface for component creation
+
+#### **ModelFactory**
+- Manages model class registrations
+- Handles model instance creation
+- Implements singleton pattern for efficient instance reuse
+
+#### **ViewFactory**
+- Manages view class registrations
+- Handles view instance creation
+- Implements singleton pattern for efficient instance reuse
+
+#### **AppFactory**
+- Main factory that coordinates model and view factories
+- Automatically registers default components
+- Provides methods for custom component registration
+
+### 📝 **Usage Examples**
+
+#### **Basic Usage**
+```python
+from factory import app_factory
+
+# Create components using the factory
+session = app_factory.create_model("ChatSession")
+chat_view = app_factory.create_view("ChatView")
+```
+
+#### **Custom Component Registration**
+```python
+# Register custom models
+app_factory.register_custom_model("CustomGenerator", CustomHTMLGenerator)
+
+# Register custom views
+app_factory.register_custom_view("CustomView", CustomChatView)
+```
+
+#### **Component Discovery**
+```python
+# See what components are available
+available_models = app_factory.get_available_models()
+available_views = app_factory.get_available_views()
+```
+
+### 🎯 **Benefits**
+
+- **Loose Coupling**: Controller doesn't directly import model/view classes
+- **Easy Testing**: Mock components can be easily swapped in
+- **Extensibility**: New implementations can be added without modifying existing code
+- **Maintainability**: Centralized component management
+- **Performance**: Singleton pattern for stateless components
+
+### 📚 **Example Implementation**
+See `example_custom_components.py` for a complete example of how to create and register custom components with the factory.

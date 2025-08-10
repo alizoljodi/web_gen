@@ -1,14 +1,13 @@
 import streamlit as st
-from models import Message, ChatSession, HTMLGenerator, FileManager
-from views import CSSStyles, ChatView, ResultsView, PublishedView, FooterView
+from factory import app_factory
 
 class AppController:
     """Main controller that coordinates the application"""
     
     def __init__(self):
-        self.session = ChatSession()
-        self.html_generator = HTMLGenerator()
-        self.file_manager = FileManager()
+        self.session = app_factory.create_model("ChatSession")
+        self.html_generator = app_factory.create_model("HTMLGenerator")
+        self.file_manager = app_factory.create_model("FileManager")
         self._initialize_session_state()
     
     def _initialize_session_state(self):
@@ -50,7 +49,8 @@ class AppController:
         # Convert dict messages back to Message objects
         self.session.messages = []
         for msg_dict in st.session_state.messages:
-            message = Message(
+            message = app_factory.create_model(
+                "Message",
                 role=msg_dict["role"],
                 content=msg_dict["content"],
                 personality=msg_dict.get("personality"),
@@ -67,7 +67,7 @@ class AppController:
     
     def add_message(self, role, content, personality=None, html_content=None):
         """Add a message to the chat history"""
-        message = Message(role, content, personality, html_content)
+        message = app_factory.create_model("Message", role, content, personality, html_content)
         self.session.add_message(message)
         
         # If HTML content is provided, open it in browser
@@ -137,7 +137,8 @@ class AppController:
         self._load_from_session_state()
         
         # Apply CSS styles
-        st.markdown(CSSStyles.get_main_styles(), unsafe_allow_html=True)
+        css_styles = app_factory.create_view("CSSStyles")
+        st.markdown(css_styles.get_main_styles(), unsafe_allow_html=True)
         
         # Page configuration
         st.set_page_config(
@@ -156,14 +157,16 @@ class AppController:
             self._show_chat_page()
         
         # Footer
-        FooterView.display_footer()
+        footer_view = app_factory.create_view("FooterView")
+        footer_view.display_footer()
     
     def _show_chat_page(self):
         """Display the main chat page"""
-        ChatView.display_header()
-        ChatView.display_chat(self.session.messages)
+        chat_view = app_factory.create_view("ChatView")
+        chat_view.display_header()
+        chat_view.display_chat(self.session.messages)
         
-        user_input, submit_button = ChatView.display_chat_input()
+        user_input, submit_button = chat_view.display_chat_input()
         
         if submit_button and user_input:
             # Add user message
@@ -185,28 +188,30 @@ class AppController:
     def _show_results_page(self):
         """Display the results page"""
         # Apply results-specific styles
-        st.markdown(CSSStyles.get_results_styles(), unsafe_allow_html=True)
+        css_styles = app_factory.create_view("CSSStyles")
+        st.markdown(css_styles.get_results_styles(), unsafe_allow_html=True)
         
         # Back button
-        if ResultsView.display_back_button():
+        results_view = app_factory.create_view("ResultsView")
+        if results_view.display_back_button():
             self.go_back_to_chat()
             st.rerun()
         
-        ResultsView.display_results_header()
+        results_view.display_results_header()
         
         # Two column layout
         col1, col2 = st.columns([1, 1])
         
         with col1:
             # Chat column
-            ResultsView.display_chat_column(
+            results_view.display_chat_column(
                 self.session.messages,
                 self._handle_continue_chat
             )
         
         with col2:
             # Results column
-            ResultsView.display_results_column(
+            results_view.display_results_column(
                 self.session.current_html,
                 self.publish_website,
                 self.get_download_filename
@@ -215,15 +220,17 @@ class AppController:
     def _show_published_page(self):
         """Display the published page"""
         # Apply published-specific styles
-        st.markdown(CSSStyles.get_published_styles(), unsafe_allow_html=True)
+        css_styles = app_factory.create_view("CSSStyles")
+        st.markdown(css_styles.get_published_styles(), unsafe_allow_html=True)
         
         # Back button
-        if PublishedView.display_back_button():
+        published_view = app_factory.create_view("PublishedView")
+        if published_view.display_back_button():
             self.go_back_to_editor()
             st.rerun()
         
-        PublishedView.display_published_header()
-        PublishedView.display_published_website(self.session.current_html)
+        published_view.display_published_header()
+        published_view.display_published_website(self.session.current_html)
     
     def _handle_continue_chat(self, user_input):
         """Handle continuing chat in results view"""
