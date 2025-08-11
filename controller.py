@@ -160,10 +160,38 @@ class AppController:
         footer_view = app_factory.create_view("FooterView")
         footer_view.display_footer()
     
+    def _validate_messages(self, messages, delays):
+        """Validate and sanitize messages and delays to prevent errors"""
+        if not messages or len(messages) == 0:
+            # Return default messages if none provided
+            messages = [("⏳ Processing...", "🔄 Working on your request...")]
+            delays = [1.5]
+            return messages, delays
+        
+        # Ensure all messages have the correct format (spinner_text, info_text)
+        validated_messages = []
+        for msg in messages:
+            if isinstance(msg, tuple) and len(msg) >= 2:
+                validated_messages.append(msg)
+            else:
+                # Skip malformed messages
+                continue
+        
+        if not validated_messages:
+            # If no valid messages, use defaults
+            validated_messages = [("⏳ Processing...", "🔄 Working on your request...")]
+            delays = [1.5]
+        else:
+            # Ensure delays list matches messages list
+            if len(delays) != len(validated_messages):
+                delays = [1.5] * len(validated_messages)
+        
+        return validated_messages, delays
+    
     def _show_progressive_messages(self, placeholder, messages, delays=None):
         """Show progressive messages in a queue with custom delays"""
-        if delays is None:
-            delays = [1.5, 2.0, 1.0]  # Default delays for each stage
+        # Validate and sanitize messages and delays
+        messages, delays = self._validate_messages(messages, delays)
         
         total_steps = len(messages)
         
@@ -207,9 +235,39 @@ class AppController:
     def _get_publishing_messages(self):
         """Get messages for website publishing process"""
         return [
-            ("🚀 Publishing your website...", "📤 Preparing your website for publication...", 1.0),
-            ("✅ Success!", "🌐 Your website is now live and ready!", 0.5),
+            ("🚀 Publishing your website...", "📤 Preparing your website for publication..."),
+            ("✅ Success!", "🌐 Your website is now live and ready!"),
         ]
+    
+    def _get_generation_messages_with_delays(self):
+        """Get messages for website generation process with delays"""
+        messages = [
+            ("📝 Processing your request...", "🔄 Analyzing your website requirements..."),
+            ("🤖 Generating your website...", "🎨 Creating beautiful HTML with modern design..."),
+        ]
+        delays = [1.5, 2.0]
+        
+        # Validate that messages and delays have the same length
+        if len(messages) != len(delays):
+            st.warning("⚠️ Message and delay count mismatch, using default delays")
+            delays = [1.5] * len(messages)
+        
+        return messages, delays
+    
+    def _get_update_messages_with_delays(self):
+        """Get messages for website update process with delays"""
+        messages = [
+            ("📝 Processing your update request...", "🔄 Analyzing your website update requirements..."),
+            ("🤖 Updating your website...", "🎨 Applying changes to your website..."),
+        ]
+        delays = [1.5, 2.0]
+        
+        # Validate that messages and delays have the same length
+        if len(messages) != len(delays):
+            st.warning("⚠️ Message and delay count mismatch, using default delays")
+            delays = [1.5] * len(messages)
+        
+        return messages, delays
     
     def _show_queue_status(self, current_step, total_steps, step_name):
         """Show queue status with progress indicator"""
@@ -249,6 +307,16 @@ class AppController:
         else:
             st.success(f"{title} {message}")
     
+    def _show_publishing_messages(self, placeholder):
+        """Show publishing messages with appropriate delays"""
+        publishing_messages = [
+            ("🚀 Publishing your website...", "📤 Preparing your website for publication..."),
+            ("✅ Success!", "🌐 Your website is now live and ready!"),
+        ]
+        publishing_delays = [1.0, 0.5]
+        
+        self._show_progressive_messages(placeholder, publishing_messages, publishing_delays)
+    
     def _show_error_message(self, error_type, error_message):
         """Show different types of error messages with appropriate styling"""
         error_styles = {
@@ -282,11 +350,18 @@ class AppController:
             # Progressive message queue for different stages
             progress_placeholder = st.empty()
             
-            # Define the message stages
-            generation_messages = self._get_generation_messages()
+            # Define the message stages with delays
+            generation_messages, generation_delays = self._get_generation_messages_with_delays()
             
             # Show progressive messages
-            self._show_progressive_messages(progress_placeholder, generation_messages)
+            try:
+                self._show_progressive_messages(progress_placeholder, generation_messages, generation_delays)
+            except Exception as e:
+                st.warning(f"⚠️ Progress display issue: {str(e)}")
+                # Fallback to simple spinner
+                with st.spinner("🤖 Generating your website..."):
+                    import time
+                    time.sleep(2.0)
             
             # Generate the HTML content
             html_content, error = self.generate_html(user_input)
@@ -363,11 +438,18 @@ class AppController:
         # Progressive message queue for updating website
         progress_placeholder = st.empty()
         
-        # Define the update message stages
-        update_messages = self._get_update_messages()
+        # Define the update message stages with delays
+        update_messages, update_delays = self._get_update_messages_with_delays()
         
         # Show progressive messages
-        self._show_progressive_messages(progress_placeholder, update_messages)
+        try:
+            self._show_progressive_messages(progress_placeholder, update_messages, update_delays)
+        except Exception as e:
+            st.warning(f"⚠️ Progress display issue: {str(e)}")
+            # Fallback to simple spinner
+            with st.spinner("🤖 Updating your website..."):
+                import time
+                time.sleep(2.0)
         
         # Update the website
         html_content, error = self.update_website(user_input)
