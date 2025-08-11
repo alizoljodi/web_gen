@@ -400,6 +400,6 @@ class FooterView(BaseView):
         """Display the footer"""
         st.markdown("""
         <div class="footer">
-            This is a demo of the website builder.
+            A prototype of a website builder ❤️ 
         </div>
         """, unsafe_allow_html=True)
