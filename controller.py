@@ -160,181 +160,6 @@ class AppController:
         footer_view = app_factory.create_view("FooterView")
         footer_view.display_footer()
     
-    def _validate_messages(self, messages, delays):
-        """Validate and sanitize messages and delays to prevent errors"""
-        if not messages or len(messages) == 0:
-            # Return default messages if none provided
-            messages = [("⏳ Processing...", "🔄 Working on your request...")]
-            delays = [1.5]
-            return messages, delays
-        
-        # Ensure all messages have the correct format (spinner_text, info_text)
-        validated_messages = []
-        for msg in messages:
-            if isinstance(msg, tuple) and len(msg) >= 2:
-                validated_messages.append(msg)
-            else:
-                # Skip malformed messages
-                continue
-        
-        if not validated_messages:
-            # If no valid messages, use defaults
-            validated_messages = [("⏳ Processing...", "🔄 Working on your request...")]
-            delays = [1.5]
-        else:
-            # Ensure delays list matches messages list
-            if len(delays) != len(validated_messages):
-                delays = [1.5] * len(validated_messages)
-        
-        return validated_messages, delays
-    
-    def _show_progressive_messages(self, placeholder, messages, delays=None):
-        """Show progressive messages in a queue with custom delays"""
-        # Validate and sanitize messages and delays
-        messages, delays = self._validate_messages(messages, delays)
-        
-        total_steps = len(messages)
-        
-        for i, (spinner_text, info_text, delay) in enumerate(zip(messages, delays)):
-            current_step = i + 1
-            
-            with placeholder.container():
-                # Show queue status
-                self._show_queue_status(current_step, total_steps, spinner_text.split("...")[0])
-                
-                with st.spinner(spinner_text):
-                    # Extract the processing type from the spinner text
-                    if "Processing" in spinner_text:
-                        self._show_processing_message("analyzing", info_text.split(": ")[-1] if ": " in info_text else info_text)
-                    elif "Generating" in spinner_text:
-                        self._show_processing_message("generating", info_text.split(": ")[-1] if ": " in info_text else info_text)
-                    elif "Updating" in spinner_text:
-                        self._show_processing_message("updating", info_text.split(": ")[-1] if ": " in info_text else info_text)
-                    elif "Publishing" in spinner_text:
-                        self._show_processing_message("publishing", info_text.split(": ")[-1] if ": " in info_text else info_text)
-                    else:
-                        st.info(info_text)
-                    
-                    import time
-                    time.sleep(delay)
-    
-    def _get_generation_messages(self):
-        """Get messages for website generation process"""
-        return [
-            ("📝 Processing your request...", "🔄 Analyzing your website requirements...", 1.5),
-            ("🤖 Generating your website...", "🎨 Creating beautiful HTML with modern design...", 2.0),
-        ]
-    
-    def _get_update_messages(self):
-        """Get messages for website update process"""
-        return [
-            ("📝 Processing your update request...", "🔄 Analyzing your website update requirements...", 1.5),
-            ("🤖 Updating your website...", "🎨 Applying changes to your website...", 2.0),
-        ]
-    
-    def _get_publishing_messages(self):
-        """Get messages for website publishing process"""
-        return [
-            ("🚀 Publishing your website...", "📤 Preparing your website for publication..."),
-            ("✅ Success!", "🌐 Your website is now live and ready!"),
-        ]
-    
-    def _get_generation_messages_with_delays(self):
-        """Get messages for website generation process with delays"""
-        messages = [
-            ("📝 Processing your request...", "🔄 Analyzing your website requirements..."),
-            ("🤖 Generating your website...", "🎨 Creating beautiful HTML with modern design..."),
-        ]
-        delays = [1.5, 2.0]
-        
-        # Validate that messages and delays have the same length
-        if len(messages) != len(delays):
-            st.warning("⚠️ Message and delay count mismatch, using default delays")
-            delays = [1.5] * len(messages)
-        
-        return messages, delays
-    
-    def _get_update_messages_with_delays(self):
-        """Get messages for website update process with delays"""
-        messages = [
-            ("📝 Processing your update request...", "🔄 Analyzing your website update requirements..."),
-            ("🤖 Updating your website...", "🎨 Applying changes to your website..."),
-        ]
-        delays = [1.5, 2.0]
-        
-        # Validate that messages and delays have the same length
-        if len(messages) != len(delays):
-            st.warning("⚠️ Message and delay count mismatch, using default delays")
-            delays = [1.5] * len(messages)
-        
-        return messages, delays
-    
-    def _show_queue_status(self, current_step, total_steps, step_name):
-        """Show queue status with progress indicator"""
-        progress = current_step / total_steps
-        st.progress(progress)
-        st.caption(f"Step {current_step} of {total_steps}: {step_name}")
-    
-    def _show_processing_message(self, processing_type, message):
-        """Show different types of processing messages with appropriate styling"""
-        processing_styles = {
-            "analyzing": ("🔍 Analyzing", "info"),
-            "generating": ("🎨 Generating", "info"),
-            "updating": ("🔄 Updating", "info"),
-            "publishing": ("🚀 Publishing", "info"),
-        }
-        
-        title, style = processing_styles.get(processing_type, ("⏳ Processing", "info"))
-        
-        if style == "info":
-            st.info(f"{title}: {message}")
-        else:
-            st.info(f"{title}: {message}")
-    
-    def _show_success_message(self, success_type, message):
-        """Show different types of success messages with appropriate styling"""
-        success_styles = {
-            "generation": ("🎉 Website Generated Successfully!", "success"),
-            "update": ("🎉 Website Updated Successfully!", "success"),
-            "publishing": ("🚀 Website Published!", "success"),
-        }
-        
-        title, style = success_styles.get(success_type, ("✅ Success!", "success"))
-        
-        if style == "success":
-            st.success(f"{title} {message}")
-            st.balloons()
-        else:
-            st.success(f"{title} {message}")
-    
-    def _show_publishing_messages(self, placeholder):
-        """Show publishing messages with appropriate delays"""
-        publishing_messages = [
-            ("🚀 Publishing your website...", "📤 Preparing your website for publication..."),
-            ("✅ Success!", "🌐 Your website is now live and ready!"),
-        ]
-        publishing_delays = [1.0, 0.5]
-        
-        self._show_progressive_messages(placeholder, publishing_messages, publishing_delays)
-    
-    def _show_error_message(self, error_type, error_message):
-        """Show different types of error messages with appropriate styling"""
-        error_styles = {
-            "generation": ("❌ Website Generation Failed", "error"),
-            "update": ("❌ Website Update Failed", "error"),
-            "api": ("⚠️ API Connection Issue", "warning"),
-            "validation": ("⚠️ Input Validation Error", "warning"),
-        }
-        
-        title, style = error_styles.get(error_type, ("❌ Error", "error"))
-        
-        if style == "error":
-            st.error(f"{title}: {error_message}")
-        elif style == "warning":
-            st.warning(f"{title}: {error_message}")
-        else:
-            st.error(f"{title}: {error_message}")
-    
     def _show_chat_page(self):
         """Display the main chat page"""
         chat_view = app_factory.create_view("ChatView")
@@ -347,42 +172,18 @@ class AppController:
             # Add user message
             self.add_message("user", user_input)
             
-            # Progressive message queue for different stages
-            progress_placeholder = st.empty()
-            
-            # Define the message stages with delays
-            generation_messages, generation_delays = self._get_generation_messages_with_delays()
-            
-            # Show progressive messages
-            try:
-                self._show_progressive_messages(progress_placeholder, generation_messages, generation_delays)
-            except Exception as e:
-                st.warning(f"⚠️ Progress display issue: {str(e)}")
-                # Fallback to simple spinner
-                with st.spinner("🤖 Generating your website..."):
-                    import time
-                    time.sleep(2.0)
-            
-            # Generate the HTML content
-            html_content, error = self.generate_html(user_input)
-            
-            # Clear the progress messages
-            progress_placeholder.empty()
-            
-            if html_content:
-                # Stage 3: Publishing
-                with st.spinner("🚀 Publishing your website..."):
-                    self._show_success_message("generation", "Your website is ready!")
-                    self.add_message("assistant", "✅ Website generated successfully!", self.session.current_personality, html_content)
-                    
-                    # Show publishing completion message
-                    st.success("🎉 Your website is ready! Check the results tab to see it.")
+            # Generate HTML with AI
+            with st.spinner("🤖 Generating your website..."):
+                html_content, error = self.generate_html(user_input)
+                
+                if html_content:
+                    response = f"✅ Website generated successfully!"
+                    self.add_message("assistant", response, self.session.current_personality, html_content)
                     st.rerun()
-            else:
-                self._show_error_message("generation", error)
-                response = f"❌ Sorry, I couldn't generate the website. Error: {error}"
-                self.add_message("assistant", response, self.session.current_personality)
-                st.rerun()
+                else:
+                    response = f"❌ Sorry, I couldn't generate the website. Error: {error}"
+                    self.add_message("assistant", response, self.session.current_personality)
+                    st.rerun()
     
     def _show_results_page(self):
         """Display the results page"""
@@ -435,39 +236,15 @@ class AppController:
         """Handle continuing chat in results view"""
         self.add_message("user", user_input)
         
-        # Progressive message queue for updating website
-        progress_placeholder = st.empty()
-        
-        # Define the update message stages with delays
-        update_messages, update_delays = self._get_update_messages_with_delays()
-        
-        # Show progressive messages
-        try:
-            self._show_progressive_messages(progress_placeholder, update_messages, update_delays)
-        except Exception as e:
-            st.warning(f"⚠️ Progress display issue: {str(e)}")
-            # Fallback to simple spinner
-            with st.spinner("🤖 Updating your website..."):
-                import time
-                time.sleep(2.0)
-        
-        # Update the website
-        html_content, error = self.update_website(user_input)
-        
-        # Clear the progress messages
-        progress_placeholder.empty()
-        
-        if html_content:
-            # Stage 3: Publishing updated website
-            with st.spinner("🚀 Publishing updated website..."):
-                self._show_success_message("update", "Your website has been updated!")
-                self.add_message("assistant", "✅ Website updated successfully!", self.session.current_personality, html_content)
-                
-                # Show publishing completion message
-                st.success("🎉 Your website has been updated! Check the results tab to see the changes.")
+        # Generate updated HTML
+        with st.spinner("🤖 Updating your website..."):
+            html_content, error = self.update_website(user_input)
+            
+            if html_content:
+                response = f"✅ Website updated successfully!"
+                self.add_message("assistant", response, self.session.current_personality, html_content)
                 st.rerun()
-        else:
-            self._show_error_message("update", error)
-            response = f"❌ Sorry, I couldn't update the website. Error: {error}"
-            self.add_message("assistant", response, self.session.current_personality)
-            st.rerun()
+            else:
+                response = f"❌ Sorry, I couldn't update the website. Error: {error}"
+                self.add_message("assistant", response, self.session.current_personality)
+                st.rerun()
