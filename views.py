@@ -400,6 +400,6 @@ class FooterView(BaseView):
         """Display the footer"""
         st.markdown("""
         <div class="footer">
-            Made with ❤️ using Streamlit and Groq | Build something lovable
+            This is a demo of the website builder.
         </div>
         """, unsafe_allow_html=True)
